@@ -29,8 +29,20 @@ if (!fs.existsSync(uploadDir)) {
 
 // Security middleware
 app.use(helmet());
+
+// CORS configuration with multiple origins
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim());
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
@@ -72,10 +84,39 @@ app.get('/api/health', (_req, res) => {
 app.use(errorHandler);
 
 // Start server
-const startServer = async () => {
-  await connectDB();
-  app.listen(config.port, () => {
-    console.log(`Server running on port ${config.port}`);
+let dbConnected = false;
+
+const startServer = () => {
+  const port = config.port;
+  
+  const server = app.listen(port, () => {
+    console.log(`[${new Date().toISOString()}] Server running on port ${port}`);
+  });
+
+  server.on('error', (err) => {
+    console.error(`[${new Date().toISOString()}] Server error:`, err);
+    process.exit(1);
+  });
+
+  // Connect to DB asynchronously
+  connectDB()
+    .then(() => {
+      dbConnected = true;
+      console.log(`[${new Date().toISOString()}] Database connected successfully`);
+    })
+    .catch((error) => {
+      console.error(`[${new Date().toISOString()}] Database connection failed:`, error.message);
+      // Don't exit, server can still serve health checks
+      console.warn(`[${new Date().toISOString()}] Server will continue without database connection`);
+    });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log(`[${new Date().toISOString()}] SIGTERM received, shutting down`);
+    server.close(() => {
+      console.log(`[${new Date().toISOString()}] Server closed`);
+      process.exit(0);
+    });
   });
 };
 
