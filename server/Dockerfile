@@ -12,7 +12,10 @@ COPY package*.json ./
 RUN npm install --only=production && npm cache clean --force
 
 # Copy application code
-COPY --chown=nodejs:nodejs . .
+COPY . .
+
+# Create uploads directory and give nodejs user ownership of entire /app
+RUN mkdir -p uploads && chown -R nodejs:nodejs /app
 
 USER nodejs
 

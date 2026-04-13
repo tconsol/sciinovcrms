@@ -23,8 +23,13 @@ const app = express();
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '..', config.uploadDir);
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  console.log(`[${new Date().toISOString()}] Uploads directory ready: ${uploadDir}`);
+} catch (err) {
+  console.warn(`[${new Date().toISOString()}] Could not create uploads directory: ${err.message}. File uploads may not work.`);
 }
 
 // Security middleware
