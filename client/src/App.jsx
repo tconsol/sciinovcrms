@@ -1,0 +1,53 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import Layout from './components/Layout';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import ClientsList from './pages/ClientsList';
+import ClientForm from './pages/ClientForm';
+import ClientDetails from './pages/ClientDetails';
+import Payments from './pages/Payments';
+import FollowUps from './pages/FollowUps';
+import ActivityLogs from './pages/ActivityLogs';
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+  return user ? children : <Navigate to="/login" />;
+}
+
+export default function App() {
+  const { user } = useAuth();
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" /> : <Login />}
+      />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Dashboard />} />
+        <Route path="clients" element={<ClientsList />} />
+        <Route path="clients/new" element={<ClientForm />} />
+        <Route path="clients/:id/edit" element={<ClientForm />} />
+        <Route path="clients/:id" element={<ClientDetails />} />
+        <Route path="payments" element={<Payments />} />
+        <Route path="follow-ups" element={<FollowUps />} />
+        <Route path="activity-logs" element={<ActivityLogs />} />
+      </Route>
+    </Routes>
+  );
+}
