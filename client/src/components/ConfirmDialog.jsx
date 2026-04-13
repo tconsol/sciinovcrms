@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HiOutlineExclamationTriangle } from 'react-icons/hi';
+import { HiExclamationTriangle } from 'react-icons/hi2';
 
 const ConfirmDialog = ({ isOpen, title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', isDangerous = false }) => {
   if (!isOpen) return null;
@@ -8,7 +8,7 @@ const ConfirmDialog = ({ isOpen, title, message, onConfirm, onCancel, confirmTex
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm mx-4">
         <div className={`flex items-center justify-center w-12 h-12 rounded-full mb-4 ${isDangerous ? 'bg-red-100' : 'bg-blue-100'}`}>
-          <HiOutlineExclamationTriangle className={`w-6 h-6 ${isDangerous ? 'text-red-600' : 'text-blue-600'}`} />
+          <HiExclamationTriangle className={`w-6 h-6 ${isDangerous ? 'text-red-600' : 'text-blue-600'}`} />
         </div>
         
         <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
