@@ -87,9 +87,9 @@ app.use(errorHandler);
 let dbConnected = false;
 
 const startServer = () => {
-  const port = config.port;
-  
-  const server = app.listen(port, () => {
+  const port = process.env.PORT || config.port;
+
+  const server = app.listen(port, '0.0.0.0', () => {
     console.log(`[${new Date().toISOString()}] Server running on port ${port}`);
   });
 

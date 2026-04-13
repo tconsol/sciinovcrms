@@ -14,7 +14,17 @@ exports.signin = async (req, res) => {
       });
     }
 
+    // Validate config
+    if (!config.sciinovBaseUrl) {
+      console.error('[Auth] SCIINOV_BASE_URL not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error: SciInov Base URL not set',
+      });
+    }
+
     console.log('[Auth] Signing in user:', userId);
+    console.log('[Auth] Using SciInov URL:', config.sciinovBaseUrl);
 
     const response = await axios.post(`${config.sciinovBaseUrl}/api/auth/signin`, {
       userId,
@@ -53,14 +63,18 @@ exports.signin = async (req, res) => {
 
     res.json(authResponse);
   } catch (error) {
-    console.error('[Auth Error]', {
+    console.error('[Auth Error Details]', {
       message: error.message,
+      code: error.code,
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
       url: error.config?.url,
-      timeout: error.code === 'ECONNABORTED',
+      sciinoveBaseUrl: config.sciinovBaseUrl,
     });
+
+    // Log full error for debugging
+    console.error('[Auth Full Error]', error);
 
     // Determine specific error type
     let message = 'Authentication failed';
@@ -73,6 +87,7 @@ exports.signin = async (req, res) => {
       status: errorStatus,
       rawErrorMsg,
       errorMsg,
+      hasResponse: !!error.response,
     });
 
     // Priority 1: Check connection errors
