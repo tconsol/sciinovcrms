@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Use full API URL from env variable, or fall back to relative path for development
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
 });
 
 // Request interceptor to add auth token
@@ -32,7 +35,7 @@ api.interceptors.response.use(
           throw new Error('No refresh token');
         }
 
-        const { data } = await axios.post('/api/auth/refresh-token', { refreshToken });
+        const { data } = await axios.post(`${baseURL}/auth/refresh-token`, { refreshToken });
 
         localStorage.setItem('accessToken', data.accessToken);
         if (data.refreshToken) {
