@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import Dropdown from '../components/Dropdown';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { HiOutlineArrowLeft } from 'react-icons/hi';
 
 export default function ClientForm() {
@@ -13,6 +14,7 @@ export default function ClientForm() {
   const [saving, setSaving] = useState(false);
   const [conferences, setConferences] = useState([]);
   const [imageFile, setImageFile] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -72,16 +74,11 @@ export default function ClientForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setShowConfirm(true);
+  };
 
-    // Confirmation before creating/updating
-    const confirmMessage = isEdit 
-      ? `Are you sure you want to update this client?`
-      : `Are you sure you want to create this client?`;
-    
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
+  const handleConfirmSubmit = async () => {
+    setShowConfirm(false);
     setSaving(true);
 
     try {
@@ -282,6 +279,18 @@ export default function ClientForm() {
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title={isEdit ? 'Update Client?' : 'Create Client?'}
+        message={isEdit 
+          ? 'Are you sure you want to update this client? This action cannot be undone.' 
+          : 'Are you sure you want to create this new client?'}
+        confirmText={isEdit ? 'Update' : 'Create'}
+        cancelText="Cancel"
+        onConfirm={handleConfirmSubmit}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { HiOutlinePencil, HiOutlinePlus } from 'react-icons/hi';
+import { HiOutlinePencil, HiOutlinePlus, HiOutlineArrowLeft } from 'react-icons/hi';
 
 const STATUS_COLORS = {
   REGISTERED: 'bg-blue-100 text-blue-700',
@@ -13,6 +13,7 @@ const STATUS_COLORS = {
 
 export default function ClientDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [client, setClient] = useState(null);
   const [payments, setPayments] = useState([]);
   const [followUps, setFollowUps] = useState([]);
@@ -118,31 +119,40 @@ export default function ClientDetails() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {client.profileImage && (
-            <img
-              src={client.profileImage}
-              alt={client.fullName}
-              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-            />
-          )}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">{client.fullName}</h2>
-            <p className="text-gray-500">{client.email}</p>
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={() => navigate('/clients')}
+          className="p-2 rounded-lg hover:bg-gray-100 transition"
+          title="Back to Clients"
+        >
+          <HiOutlineArrowLeft className="w-6 h-6 text-gray-700" />
+        </button>
+        <div className="flex flex-wrap items-start justify-between gap-4 flex-1">
+          <div className="flex items-center gap-4">
+            {client.profileImage && (
+              <img
+                src={client.profileImage}
+                alt={client.fullName}
+                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+              />
+            )}
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">{client.fullName}</h2>
+              <p className="text-gray-500">{client.email}</p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className={`text-sm px-3 py-1 rounded-full font-medium ${STATUS_COLORS[client.status]}`}>
-            {client.status}
-          </span>
-          <Link
-            to={`/clients/${id}/edit`}
-            className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm hover:bg-gray-50"
-          >
-            <HiOutlinePencil className="w-4 h-4" /> Edit
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className={`text-sm px-3 py-1 rounded-full font-medium ${STATUS_COLORS[client.status]}`}>
+              {client.status}
+            </span>
+            <Link
+              to={`/clients/${id}/edit`}
+              className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm hover:bg-gray-50"
+            >
+              <HiOutlinePencil className="w-4 h-4" /> Edit
+            </Link>
+          </div>
         </div>
       </div>
 
