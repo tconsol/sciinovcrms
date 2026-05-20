@@ -27,30 +27,24 @@ const clientSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['Speaker', 'Attendee', 'Sponsor'],
       required: true,
-    },
-    topic: {
-      type: String,
       trim: true,
     },
-    abstract: {
-      type: String,
-      trim: true,
+    topics: {
+      type: [String],
+      default: [],
     },
     profileImage: {
       type: String,
     },
     status: {
       type: String,
-      enum: ['REGISTERED', 'PAID', 'DECLINED', 'NEXT_EDITION_INTEREST'],
       default: 'REGISTERED',
+      trim: true,
     },
-    conferenceId: {
-      type: String,
-    },
-    conferenceName: {
-      type: String,
+    conferenceNames: {
+      type: [String],
+      default: [],
     },
     createdBy: {
       type: String,
@@ -66,7 +60,7 @@ const clientSchema = new mongoose.Schema(
   }
 );
 
-clientSchema.index({ email: 1, conferenceId: 1 });
+clientSchema.index({ email: 1 });
 clientSchema.index({ status: 1 });
 clientSchema.index({ createdBy: 1 });
 clientSchema.index({ isDeleted: 1 });

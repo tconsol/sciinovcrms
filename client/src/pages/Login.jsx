@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { HiOutlineEye, HiOutlineEyeOff, HiOutlineExclamationCircle, HiOutlineCheckCircle } from 'react-icons/hi';
+import { HiOutlineEye, HiOutlineEyeOff, HiOutlineExclamationCircle } from 'react-icons/hi';
+import { HiArrowRight } from 'react-icons/hi2';
 
 export default function Login() {
   const [userId, setUserId] = useState('');
@@ -23,31 +24,16 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
     setErrors({});
-
     try {
       await login(userId, password);
-      toast.success('Login successful! Welcome back.');
+      toast.success('Welcome back!');
       navigate('/');
     } catch (error) {
-      console.error('[Login Error Debug]', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-
-      // Clear all field errors - only show toast
+      console.error('[Login Error]', error.message, error.response?.status, error.response?.data);
       setErrors({});
-      
-      console.log('[Login Error]', error.message);
-
-      // Show only "Invalid credentials" for any error with red toast
       toast.error('Invalid credentials', {
         icon: <HiOutlineExclamationCircle className="w-5 h-5" />,
         duration: 4000,
@@ -56,39 +42,54 @@ export default function Login() {
           color: '#FFFFFF',
           borderRadius: '0.5rem',
           padding: '1rem',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
         },
       });
-
-      console.error('Full login error:', error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Card Container */}
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-12 text-center">
-            <div className="mb-4">
-              <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto">
-                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                </svg>
-              </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+
+      {/* Background orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-violet-400 dark:bg-violet-600 rounded-full opacity-10 dark:opacity-20 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-400 dark:bg-indigo-600 rounded-full opacity-10 dark:opacity-20 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-100 dark:bg-blue-900 rounded-full opacity-30 dark:opacity-10 blur-3xl" />
+      </div>
+
+      {/* Grid overlay (dark mode only) */}
+      <div
+        className="absolute inset-0 opacity-0 dark:opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      {/* Card */}
+      <div className="relative w-full max-w-md">
+        <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-2xl p-8 shadow-xl dark:shadow-2xl">
+
+          {/* Brand */}
+          <div className="mb-8 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 mb-5 shadow-lg shadow-violet-900/30">
+              <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+              </svg>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">SciInov CRM</h1>
-            <p className="text-blue-100 text-sm">Conference Management System</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">SciInov CRM</h1>
+            <p className="text-gray-400 dark:text-slate-400 text-sm mt-1">Conference Management System</p>
           </div>
 
-          {/* Form Section */}
-          <form onSubmit={handleSubmit} className="px-8 py-12">
-            {/* User ID Field */}
-            <div className="mb-6">
-              <label htmlFor="userId" className="block text-sm font-semibold text-gray-700 mb-3">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+
+            {/* User ID */}
+            <div>
+              <label htmlFor="userId" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 User ID
               </label>
               <div className="relative">
@@ -101,30 +102,30 @@ export default function Login() {
                     if (errors.userId) setErrors({ ...errors, userId: '' });
                   }}
                   placeholder="Enter your user ID"
-                  className={`w-full px-4 py-3 rounded-lg border-2 transition-all duration-200 focus:outline-none ${
-                    errors.userId
-                      ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                      : 'border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-                  }`}
                   disabled={loading}
+                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-white/[0.06] border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 text-sm transition-all duration-200 focus:outline-none focus:ring-2 ${
+                    errors.userId
+                      ? 'border-red-400 dark:border-red-500/60 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-white/10 focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-violet-500/20'
+                  }`}
                 />
                 {errors.userId && (
-                  <div className="absolute right-4 top-3.5 text-red-500">
-                    <HiOutlineExclamationCircle className="w-5 h-5" />
+                  <div className="absolute right-3 top-3.5 text-red-500 dark:text-red-400">
+                    <HiOutlineExclamationCircle className="w-4.5 h-4.5" />
                   </div>
                 )}
               </div>
               {errors.userId && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <HiOutlineExclamationCircle className="w-4 h-4" />
+                <p className="mt-1.5 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                  <HiOutlineExclamationCircle className="w-3.5 h-3.5 shrink-0" />
                   {errors.userId}
                 </p>
               )}
             </div>
 
-            {/* Password Field */}
-            <div className="mb-8">
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -137,78 +138,69 @@ export default function Login() {
                     if (errors.password) setErrors({ ...errors, password: '' });
                   }}
                   placeholder="Enter your password"
-                  className={`w-full px-4 py-3 rounded-lg border-2 transition-all duration-200 focus:outline-none pr-12 ${
-                    errors.password
-                      ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200'
-                      : 'border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
-                  }`}
                   disabled={loading}
+                  className={`w-full px-4 py-3 pr-11 rounded-xl bg-gray-100 dark:bg-white/[0.06] border text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 text-sm transition-all duration-200 focus:outline-none focus:ring-2 ${
+                    errors.password
+                      ? 'border-red-400 dark:border-red-500/60 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-gray-300 dark:border-white/10 focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-violet-500/20'
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-3.5 text-gray-500 hover:text-gray-700 transition-colors"
                   tabIndex="-1"
                   disabled={loading}
+                  className="absolute right-3 top-3.5 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors"
                 >
-                  {showPassword ? (
-                    <HiOutlineEyeOff className="w-5 h-5" />
-                  ) : (
-                    <HiOutlineEye className="w-5 h-5" />
-                  )}
+                  {showPassword
+                    ? <HiOutlineEyeOff className="w-4.5 h-4.5" />
+                    : <HiOutlineEye className="w-4.5 h-4.5" />
+                  }
                 </button>
-                {errors.password && (
-                  <div className="absolute right-12 top-3.5 text-red-500">
-                    <HiOutlineExclamationCircle className="w-5 h-5" />
-                  </div>
-                )}
               </div>
               {errors.password && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <HiOutlineExclamationCircle className="w-4 h-4" />
+                <p className="mt-1.5 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                  <HiOutlineExclamationCircle className="w-3.5 h-3.5 shrink-0" />
                   {errors.password}
                 </p>
               )}
             </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 ${
+              className={`w-full py-3 px-4 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all duration-200 mt-2 ${
                 loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:scale-105 active:scale-95'
+                  ? 'bg-gray-300 dark:bg-slate-700 cursor-not-allowed text-gray-500 dark:text-slate-400'
+                  : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-900/30 hover:shadow-violet-900/50 active:scale-[0.98]'
               }`}
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-gray-400 dark:border-slate-400 border-t-transparent rounded-full animate-spin" />
                   Signing in...
                 </>
               ) : (
                 <>
-                  <HiOutlineCheckCircle className="w-5 h-5" />
                   Sign In
+                  <HiArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-8 py-4 text-center border-t border-gray-200">
-            <p className="text-xs text-gray-600">
-              Powered by <span className="font-semibold text-blue-600">SciInov DBMS</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Info Box */}
-        <div className="mt-8 bg-white bg-opacity-70 backdrop-blur rounded-lg p-4 border border-white">
-          <p className="text-xs text-gray-600 text-center">
-            💡 Tip: Use your SciInov account credentials to log in.
+          <p className="mt-6 text-center text-xs text-gray-400 dark:text-slate-600">
+            Powered by{' '}
+            <span className="text-gray-500 dark:text-slate-400 font-medium">SciInov DBMS</span>
           </p>
         </div>
+
+        {/* Tip */}
+        <p className="mt-4 text-center text-xs text-gray-400 dark:text-slate-600">
+          Use your SciInov account credentials to sign in
+        </p>
       </div>
     </div>
   );

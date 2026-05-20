@@ -9,6 +9,8 @@ import ClientDetails from './pages/ClientDetails';
 import Payments from './pages/Payments';
 import FollowUps from './pages/FollowUps';
 import ActivityLogs from './pages/ActivityLogs';
+import AdminPage from './pages/AdminPage';
+import History from './pages/History';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -45,8 +47,10 @@ export default function App() {
         <Route path="clients/:id/edit" element={<ClientForm />} />
         <Route path="clients/:id" element={<ClientDetails />} />
         <Route path="payments" element={<Payments />} />
-        <Route path="follow-ups" element={<FollowUps />} />
+        <Route path="conversations" element={<FollowUps />} />
+        <Route path="history" element={<History />} />
         <Route path="activity-logs" element={<ActivityLogs />} />
+        <Route path="admin" element={<AdminPage />} />
       </Route>
     </Routes>
   );

@@ -1,5 +1,6 @@
 const Client = require('../models/Client');
 const logActivity = require('../utils/logActivity');
+const socket = require('../socket');
 
 exports.createClient = async (req, res) => {
   try {
@@ -21,6 +22,7 @@ exports.createClient = async (req, res) => {
       clientId: client._id,
     });
 
+    socket.emit('clients:changed');
     res.status(201).json(client);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -128,6 +130,7 @@ exports.updateClient = async (req, res) => {
         : undefined,
     });
 
+    socket.emit('clients:changed');
     res.json(client);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -153,6 +156,7 @@ exports.deleteClient = async (req, res) => {
       clientId: client._id,
     });
 
+    socket.emit('clients:changed');
     res.json({ message: 'Client deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

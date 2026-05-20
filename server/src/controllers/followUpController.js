@@ -1,6 +1,7 @@
 const FollowUp = require('../models/FollowUp');
 const Client = require('../models/Client');
 const logActivity = require('../utils/logActivity');
+const socket = require('../socket');
 
 exports.createFollowUp = async (req, res) => {
   try {
@@ -19,10 +20,11 @@ exports.createFollowUp = async (req, res) => {
     await logActivity({
       userId: req.user.userId,
       actionType: 'FOLLOWUP_CREATED',
-      description: `Follow-up scheduled for ${client.fullName}`,
+      description: `Conversation logged for ${client.fullName}`,
       clientId: client._id,
     });
 
+    socket.emit('followups:changed');
     res.status(201).json(followUp);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -41,20 +43,30 @@ exports.getFollowUpsByClient = async (req, res) => {
 
 exports.getAllFollowUps = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, overdue } = req.query;
+    const { page = 1, limit = 10, status, overdue, conference, topic, outcome, search } = req.query;
 
     const filter = {};
     if (status) filter.status = status;
+    if (conference) filter.conference = conference;
+    if (topic) filter.topic = topic;
+    if (outcome) filter.outcome = outcome;
     if (overdue === 'true') {
       filter.followUpDate = { $lt: new Date() };
       filter.status = 'PENDING';
+    }
+    if (search) {
+      const matchingClients = await Client.find(
+        { fullName: { $regex: search, $options: 'i' }, isDeleted: false },
+        '_id'
+      );
+      filter.clientId = { $in: matchingClients.map((c) => c._id) };
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [followUps, total] = await Promise.all([
       FollowUp.find(filter)
         .populate('clientId', 'fullName email role status')
-        .sort({ followUpDate: 1 })
+        .sort({ followUpDate: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
       FollowUp.countDocuments(filter),
@@ -88,18 +100,19 @@ exports.updateFollowUp = async (req, res) => {
       await logActivity({
         userId: req.user.userId,
         actionType: 'FOLLOWUP_COMPLETED',
-        description: `Follow-up completed for client`,
+        description: `Conversation marked complete for client`,
         clientId: followUp.clientId,
       });
     } else {
       await logActivity({
         userId: req.user.userId,
         actionType: 'FOLLOWUP_UPDATED',
-        description: `Follow-up updated`,
+        description: `Conversation updated`,
         clientId: followUp.clientId,
       });
     }
 
+    socket.emit('followups:changed');
     res.json(followUp);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -112,6 +125,7 @@ exports.deleteFollowUp = async (req, res) => {
     if (!followUp) {
       return res.status(404).json({ message: 'Follow-up not found' });
     }
+    socket.emit('followups:changed');
     res.json({ message: 'Follow-up deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

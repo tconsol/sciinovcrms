@@ -1,3 +1,4 @@
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -5,10 +6,12 @@ const morgan = require('morgan');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
+const { Server } = require('socket.io');
 
 const config = require('./config');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
+const socketManager = require('./socket');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -18,8 +21,10 @@ const followUpRoutes = require('./routes/followUpRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const activityLogRoutes = require('./routes/activityLogRoutes');
 const sciinovRoutes = require('./routes/sciinovRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
+const httpServer = http.createServer(app);
 
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, '..', config.uploadDir);
@@ -51,6 +56,14 @@ app.use(cors({
   credentials: true,
 }));
 
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+});
+socketManager.setIo(io);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -79,6 +92,7 @@ app.use('/api/follow-ups', followUpRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/sciinov', sciinovRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -94,7 +108,7 @@ let dbConnected = false;
 const startServer = () => {
   const port = process.env.PORT || config.port;
 
-  const server = app.listen(port, '0.0.0.0', () => {
+  const server = httpServer.listen(port, '0.0.0.0', () => {
     console.log(`[${new Date().toISOString()}] Server running on port ${port}`);
   });
 

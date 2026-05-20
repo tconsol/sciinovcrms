@@ -8,7 +8,7 @@ const upload = require('../utils/upload');
 const clientValidation = [
   body('fullName').trim().notEmpty().withMessage('Full name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
-  body('role').isIn(['Speaker', 'Attendee', 'Sponsor']).withMessage('Invalid role'),
+  body('role').trim().notEmpty().withMessage('Role is required'),
 ];
 
 router.use(authMiddleware);

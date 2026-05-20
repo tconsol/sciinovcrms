@@ -1,6 +1,7 @@
 const Payment = require('../models/Payment');
 const Client = require('../models/Client');
 const logActivity = require('../utils/logActivity');
+const socket = require('../socket');
 
 exports.addPayment = async (req, res) => {
   try {
@@ -9,12 +10,6 @@ exports.addPayment = async (req, res) => {
     const client = await Client.findOne({ _id: clientId, isDeleted: false });
     if (!client) {
       return res.status(404).json({ message: 'Client not found' });
-    }
-
-    if (client.status !== 'PAID') {
-      return res.status(400).json({
-        message: 'Payment can only be added when client status is PAID',
-      });
     }
 
     const payment = await Payment.create({
@@ -30,6 +25,7 @@ exports.addPayment = async (req, res) => {
       metadata: { amountPaid: payment.amountPaid, paymentMode: payment.paymentMode },
     });
 
+    socket.emit('payments:changed');
     res.status(201).json(payment);
   } catch (error) {
     res.status(500).json({ message: error.message });
