@@ -313,6 +313,7 @@ function ClientConversationsPanel({ client }) {
 export default function ClientsList() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ status: '', role: '' });
   const [deleteId, setDeleteId] = useState(null);
@@ -330,9 +331,9 @@ export default function ClientsList() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['clients', { page, search, ...filters }],
+    queryKey: ['clients', { page, limit, search, ...filters }],
     queryFn: () => {
-      const params = { page, limit: 10 };
+      const params = { page, limit };
       if (search) params.search = search;
       if (filters.status) params.status = filters.status;
       if (filters.role) params.role = filters.role;
@@ -460,9 +461,30 @@ export default function ClientsList() {
         onCancel={() => setDeleteId(null)}
       />
 
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400 dark:text-slate-500">Showing {clients.length} of {pagination.total} clients</p>
+      {pagination.total > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-gray-400 dark:text-slate-500">
+              Page {pagination.page} of {pagination.pages} · {pagination.total} record{pagination.total !== 1 ? 's' : ''}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400 dark:text-slate-500">Show</span>
+              {[10, 20, 50, 100].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => { setLimit(n); setPage(1); }}
+                  className={`px-2 py-1 text-xs rounded-lg border transition font-medium ${
+                    limit === n
+                      ? 'bg-violet-600 border-violet-600 text-white'
+                      : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.08]'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage((p) => p - 1)} disabled={page <= 1} className={paginationBtnCls}>Previous</button>
             <span className="px-3 py-1.5 text-xs text-gray-400 dark:text-slate-400">{page} / {pagination.pages}</span>

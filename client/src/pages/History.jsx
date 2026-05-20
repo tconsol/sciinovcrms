@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '../services/api';
+import toast from 'react-hot-toast';
 import Dropdown from '../components/Dropdown';
-import { HiOutlineSearch, HiOutlinePlus, HiOutlineX } from 'react-icons/hi';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { HiOutlineSearch, HiOutlinePlus, HiOutlineX, HiOutlinePencil, HiOutlineTrash, HiOutlineCheck } from 'react-icons/hi';
 
 const OUTCOME_OPTIONS = [
   { value: '', label: 'All Outcomes' },
@@ -41,6 +43,8 @@ const emptyPayForm = () => ({
   discount: '0',
   paymentMode: '',
   transactionId: '',
+  conference: '',
+  followUpId: '',
 });
 
 export default function History() {
@@ -49,6 +53,7 @@ export default function History() {
   const qc = useQueryClient();
 
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState(() => clientParam);
   const [statusFilter, setStatusFilter] = useState('');
   const [conferenceFilter, setConferenceFilter] = useState('');
@@ -56,6 +61,10 @@ export default function History() {
   const [outcomeFilter, setOutcomeFilter] = useState('');
 
   const [panel, setPanel] = useState(null); // 'conv' | 'pay' | null
+  const [paymentHistoryOpen, setPaymentHistoryOpen] = useState(false);
+  const [editingPayId, setEditingPayId] = useState(null);
+  const [editPayForm, setEditPayForm] = useState({});
+  const [deletePayId, setDeletePayId] = useState(null);
   const [convForm, setConvForm] = useState(emptyConvForm);
   const [payForm, setPayForm] = useState(emptyPayForm);
   const [formError, setFormError] = useState('');
@@ -90,6 +99,20 @@ export default function History() {
   });
   const targetClient = clientSearchData?.clients?.[0] || null;
 
+  const { data: clientPayments = [] } = useQuery({
+    queryKey: ['payments', 'client', targetClient?._id],
+    queryFn: () => api.get(`/payments/client/${targetClient._id}`).then((r) => r.data),
+    enabled: !!targetClient?._id && paymentHistoryOpen,
+    staleTime: 30_000,
+  });
+
+  const { data: clientConversations = [] } = useQuery({
+    queryKey: ['followups', 'client', targetClient?._id],
+    queryFn: () => api.get(`/follow-ups/client/${targetClient._id}`).then((r) => r.data),
+    enabled: !!targetClient?._id,
+    staleTime: 30_000,
+  });
+
   const activeConferences = confsData.filter((c) => c.isActive);
   const topics = Array.isArray(sciData) ? sciData : [];
   const activePaymentModes = paymentModesData.filter((m) => m.isActive);
@@ -103,9 +126,9 @@ export default function History() {
     : topics.map((t) => t.name || t.title);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['followups', 'history', { page, search, statusFilter, conferenceFilter, topicFilter, outcomeFilter }],
+    queryKey: ['followups', 'history', { page, limit, search, statusFilter, conferenceFilter, topicFilter, outcomeFilter }],
     queryFn: () => {
-      const params = { page, limit: 20 };
+      const params = { page, limit };
       if (search) params.search = search;
       if (statusFilter) params.status = statusFilter;
       if (conferenceFilter) params.conference = conferenceFilter;
@@ -137,12 +160,46 @@ export default function History() {
     mutationFn: (body) => api.post('/payments', body).then((r) => r.data),
     onSuccess: () => {
       invalidatePays();
+      qc.invalidateQueries({ queryKey: ['payments', 'client', targetClient?._id] });
       setPayForm(emptyPayForm);
       setPanel(null);
       setFormError('');
     },
     onError: (e) => setFormError(e?.response?.data?.message || 'Failed to add payment'),
   });
+
+  const updatePayMutation = useMutation({
+    mutationFn: ({ id, body }) => api.put(`/payments/${id}`, body).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['payments', 'client', targetClient?._id] });
+      invalidatePays();
+      setEditingPayId(null);
+      setEditPayForm({});
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || 'Failed to update payment'),
+  });
+
+  const deletePayMutation = useMutation({
+    mutationFn: (id) => api.delete(`/payments/${id}`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['payments', 'client', targetClient?._id] });
+      invalidatePays();
+      setDeletePayId(null);
+    },
+    onError: (e) => toast.error(e?.response?.data?.message || 'Failed to delete payment'),
+  });
+
+  const startEditPay = (p) => {
+    setEditingPayId(p._id);
+    setEditPayForm({
+      amountPaid: String(p.amountPaid),
+      actualFee: String(p.actualFee),
+      discount: String(p.discount || 0),
+      paymentMode: p.paymentMode || '',
+      transactionId: p.transactionId || '',
+      conference: p.conference || '',
+    });
+  };
 
   const handleConvSubmit = (e) => {
     e.preventDefault();
@@ -177,6 +234,7 @@ export default function History() {
     setTopicFilter('');
     setOutcomeFilter('');
     setPage(1);
+    setLimit(10);
   };
 
   // Group by conference
@@ -213,7 +271,7 @@ export default function History() {
         </div>
 
         {targetClient && (
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 flex-wrap">
             <button
               type="button"
               onClick={() => togglePanel('conv')}
@@ -237,6 +295,18 @@ export default function History() {
             >
               {panel === 'pay' ? <HiOutlineX className="w-3.5 h-3.5" /> : <HiOutlinePlus className="w-3.5 h-3.5" />}
               Payment
+            </button>
+            <button
+              type="button"
+              onClick={() => { setPaymentHistoryOpen((o) => !o); setPanel(null); }}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition shadow-sm ${
+                paymentHistoryOpen
+                  ? 'bg-amber-700 border-amber-700 text-white'
+                  : 'bg-gradient-to-r from-amber-500 to-orange-500 border-transparent text-white hover:opacity-90 shadow-amber-900/20'
+              }`}
+            >
+              {paymentHistoryOpen && <HiOutlineX className="w-3.5 h-3.5" />}
+              Payment History
             </button>
           </div>
         )}
@@ -423,6 +493,38 @@ export default function History() {
               />
             </div>
             <div>
+              <label className={labelCls}>Conference</label>
+              <Dropdown
+                value={payForm.conference}
+                onChange={(v) => setPayForm((f) => ({ ...f, conference: v, followUpId: '' }))}
+                options={[
+                  { value: '', label: 'Select conference' },
+                  ...clientConferences.map((c) => ({ value: c, label: c })),
+                ]}
+                placeholder="Select conference"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Link to Conversation</label>
+              <Dropdown
+                value={payForm.followUpId}
+                onChange={(v) => setPayForm((f) => ({ ...f, followUpId: v }))}
+                options={[
+                  { value: '', label: 'None' },
+                  ...(payForm.conference
+                    ? clientConversations.filter((c) => (c.conference || '') === payForm.conference)
+                    : clientConversations
+                  )
+                    .sort((a, b) => new Date(a.followUpDate) - new Date(b.followUpDate))
+                    .map((c, i) => ({
+                      value: c._id,
+                      label: `#${i + 1} · ${c.outcome || 'No outcome'} · ${new Date(c.followUpDate).toLocaleDateString()}`,
+                    })),
+                ]}
+                placeholder="Link conversation (optional)"
+              />
+            </div>
+            <div>
               <label className={labelCls}>Transaction ID</label>
               <input
                 type="text"
@@ -456,6 +558,154 @@ export default function History() {
           </form>
         </div>
       )}
+
+      {/* Payment History Panel */}
+      {paymentHistoryOpen && targetClient && (
+        <div className="bg-white dark:bg-white/[0.04] border border-amber-200 dark:border-amber-500/30 rounded-2xl shadow-sm dark:shadow-none overflow-hidden">
+          <div className="px-5 py-3 border-b border-amber-100 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Payment History — {targetClient.fullName}</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+              {clientPayments.length} payment{clientPayments.length !== 1 ? 's' : ''} · ${clientPayments.reduce((s, p) => s + (p.amountPaid || 0), 0).toLocaleString()} total
+            </p>
+          </div>
+          {clientPayments.length === 0 ? (
+            <div className="p-8 text-center text-xs text-gray-400 dark:text-slate-600">No payments recorded</div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
+              {clientPayments.map((p) => (
+                <div key={p._id}>
+                  {editingPayId === p._id ? (
+                    /* ── Inline Edit Row ── */
+                    <div className="px-5 py-4 bg-amber-50/50 dark:bg-amber-500/5 space-y-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div>
+                          <label className={labelCls}>Actual Fee ($)</label>
+                          <input type="number" min="0" value={editPayForm.actualFee} onWheel={(e) => e.target.blur()}
+                            onChange={(e) => {
+                              const actualFee = e.target.value;
+                              setEditPayForm((f) => {
+                                const fee = parseFloat(actualFee) || 0;
+                                const paid = parseFloat(f.amountPaid) || 0;
+                                return { ...f, actualFee, discount: String(Math.max(0, fee - paid)) };
+                              });
+                            }}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Discount ($)</label>
+                          <input type="number" min="0" value={editPayForm.discount} onWheel={(e) => e.target.blur()}
+                            onChange={(e) => {
+                              const discount = e.target.value;
+                              setEditPayForm((f) => {
+                                const fee = parseFloat(f.actualFee) || 0;
+                                return { ...f, discount, amountPaid: String(Math.max(0, fee - (parseFloat(discount) || 0))) };
+                              });
+                            }}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Amount Paid ($)</label>
+                          <input type="number" min="0" value={editPayForm.amountPaid} onWheel={(e) => e.target.blur()}
+                            onChange={(e) => {
+                              const amountPaid = e.target.value;
+                              setEditPayForm((f) => {
+                                const fee = parseFloat(f.actualFee) || 0;
+                                return { ...f, amountPaid, discount: String(Math.max(0, fee - (parseFloat(amountPaid) || 0))) };
+                              });
+                            }}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Payment Mode</label>
+                          <Dropdown
+                            value={editPayForm.paymentMode}
+                            onChange={(v) => setEditPayForm((f) => ({ ...f, paymentMode: v }))}
+                            options={[
+                              { value: '', label: 'Select mode' },
+                              ...activePaymentModes.map((m) => ({ value: m.name, label: m.label || m.name })),
+                            ]}
+                            placeholder="Select mode"
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Conference</label>
+                          <Dropdown
+                            value={editPayForm.conference}
+                            onChange={(v) => setEditPayForm((f) => ({ ...f, conference: v }))}
+                            options={[
+                              { value: '', label: 'None' },
+                              ...clientConferences.map((c) => ({ value: c, label: c })),
+                            ]}
+                            placeholder="Conference"
+                          />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Transaction ID</label>
+                          <input type="text" value={editPayForm.transactionId}
+                            onChange={(e) => setEditPayForm((f) => ({ ...f, transactionId: e.target.value }))}
+                            placeholder="Optional" className={inputCls} />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button"
+                          disabled={updatePayMutation.isPending}
+                          onClick={() => updatePayMutation.mutate({ id: p._id, body: { ...editPayForm, amountPaid: Number(editPayForm.amountPaid), actualFee: Number(editPayForm.actualFee), discount: Number(editPayForm.discount) } })}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl disabled:opacity-50 transition">
+                          <HiOutlineCheck className="w-3.5 h-3.5" />
+                          {updatePayMutation.isPending ? 'Saving...' : 'Save'}
+                        </button>
+                        <button type="button" onClick={() => { setEditingPayId(null); setEditPayForm({}); }}
+                          className="px-3 py-1.5 bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-slate-400 text-xs font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 transition">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── View Row ── */
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">${p.amountPaid.toLocaleString()}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-slate-400 font-medium">{p.paymentMode}</span>
+                        {p.conference && (
+                          <span className="text-xs px-2 py-0.5 rounded-lg bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-medium">{p.conference}</span>
+                        )}
+                        {p.transactionId && (
+                          <span className="text-xs text-gray-400 dark:text-slate-500">#{p.transactionId}</span>
+                        )}
+                        {p.actualFee > p.amountPaid && (
+                          <span className="text-xs text-gray-400 dark:text-slate-500">Fee: ${p.actualFee.toLocaleString()} · Disc: ${(p.discount || 0).toLocaleString()}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400 dark:text-slate-500">{new Date(p.paymentDate || p.createdAt).toLocaleDateString()}</span>
+                        <button type="button" onClick={() => startEditPay(p)}
+                          className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
+                          <HiOutlinePencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" onClick={() => setDeletePayId(p._id)}
+                          className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                          <HiOutlineTrash className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deletePayId)}
+        title="Delete Payment?"
+        message="This payment record will be permanently removed."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous
+        onConfirm={() => deletePayMutation.mutate(deletePayId)}
+        onCancel={() => setDeletePayId(null)}
+      />
 
       {/* Filters */}
       <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-2xl p-4 shadow-sm dark:shadow-none">
@@ -651,11 +901,30 @@ export default function History() {
         </div>
       )}
 
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400 dark:text-slate-500">
-            Page {pagination.page} of {pagination.pages}
-          </p>
+      {pagination.total > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-gray-400 dark:text-slate-500">
+              Page {pagination.page} of {pagination.pages} · {pagination.total} record{pagination.total !== 1 ? 's' : ''}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400 dark:text-slate-500">Show</span>
+              {[10, 20, 50, 100].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => { setLimit(n); setPage(1); }}
+                  className={`px-2 py-1 text-xs rounded-lg border transition font-medium ${
+                    limit === n
+                      ? 'bg-violet-600 border-violet-600 text-white'
+                      : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.08]'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => p - 1)}

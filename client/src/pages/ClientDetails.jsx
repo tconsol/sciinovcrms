@@ -437,7 +437,7 @@ export default function ClientDetails() {
             {payments.map((p) => (
               <div key={p._id} className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-xl text-sm">
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">$${p.amountPaid.toLocaleString()}</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">${p.amountPaid.toLocaleString()}</span>
                   <span className="text-xs text-gray-500 dark:text-slate-500 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-lg">{p.paymentMode}</span>
                   {p.transactionId && <span className="text-xs text-gray-400 dark:text-slate-600">#{p.transactionId}</span>}
                 </div>

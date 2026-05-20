@@ -87,7 +87,27 @@ exports.updatePayment = async (req, res) => {
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
+    socket.emit('payments:changed');
     res.json(payment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.deletePayment = async (req, res) => {
+  try {
+    const payment = await Payment.findByIdAndDelete(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    await logActivity({
+      userId: req.user.userId,
+      actionType: 'PAYMENT_DELETED',
+      description: `Payment of ${payment.amountPaid} deleted`,
+      clientId: payment.clientId,
+    });
+    socket.emit('payments:changed');
+    res.json({ message: 'Payment deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

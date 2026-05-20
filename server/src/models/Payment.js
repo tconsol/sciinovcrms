@@ -24,12 +24,21 @@ const paymentSchema = new mongoose.Schema(
     },
     paymentMode: {
       type: String,
-      enum: ['UPI', 'CARD', 'BANK'],
       required: true,
+      trim: true,
     },
     transactionId: {
       type: String,
       trim: true,
+    },
+    conference: {
+      type: String,
+      trim: true,
+    },
+    followUpId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FollowUp',
+      default: null,
     },
     paymentDate: {
       type: Date,
