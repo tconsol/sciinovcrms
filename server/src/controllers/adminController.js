@@ -4,18 +4,6 @@ const StatusConfig = require('../models/StatusConfig');
 const PaymentModeConfig = require('../models/PaymentModeConfig');
 const socket = require('../socket');
 
-const DEFAULT_ROLES = [
-  { name: 'Speaker', label: 'Speaker' },
-  { name: 'Attendee', label: 'Attendee' },
-  { name: 'Sponsor', label: 'Sponsor' },
-];
-
-const DEFAULT_STATUSES = [
-  { name: 'REGISTERED', label: 'Registered', color: 'blue' },
-  { name: 'PAID', label: 'Paid', color: 'green' },
-  { name: 'DECLINED', label: 'Declined', color: 'red' },
-  { name: 'NEXT_EDITION_INTEREST', label: 'Next Edition Interest', color: 'amber' },
-];
 
 // ─── Conferences ────────────────────────────────────────────────
 exports.getConferences = async (req, res) => {
@@ -65,10 +53,7 @@ exports.deleteConference = async (req, res) => {
 // ─── Roles ──────────────────────────────────────────────────────
 exports.getRoles = async (req, res) => {
   try {
-    let roles = await RoleConfig.find().sort({ createdAt: 1 });
-    if (roles.length === 0) {
-      roles = await RoleConfig.insertMany(DEFAULT_ROLES.map((r) => ({ ...r, createdBy: 'system' })));
-    }
+    const roles = await RoleConfig.find().sort({ createdAt: 1 });
     res.json(roles);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -111,10 +96,7 @@ exports.deleteRole = async (req, res) => {
 // ─── Statuses ───────────────────────────────────────────────────
 exports.getStatuses = async (req, res) => {
   try {
-    let statuses = await StatusConfig.find().sort({ createdAt: 1 });
-    if (statuses.length === 0) {
-      statuses = await StatusConfig.insertMany(DEFAULT_STATUSES.map((s) => ({ ...s, createdBy: 'system' })));
-    }
+    const statuses = await StatusConfig.find().sort({ createdAt: 1 });
     res.json(statuses);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -155,19 +137,9 @@ exports.deleteStatus = async (req, res) => {
 };
 
 // ─── Payment Modes ──────────────────────────────────────────────
-const DEFAULT_PAYMENT_MODES = [
-  { name: 'UPI', label: 'UPI' },
-  { name: 'CARD', label: 'Card' },
-  { name: 'BANK', label: 'Bank Transfer' },
-  { name: 'CASH', label: 'Cash' },
-];
-
 exports.getPaymentModes = async (req, res) => {
   try {
-    let modes = await PaymentModeConfig.find().sort({ createdAt: 1 });
-    if (modes.length === 0) {
-      modes = await PaymentModeConfig.insertMany(DEFAULT_PAYMENT_MODES.map((m) => ({ ...m, createdBy: 'system' })));
-    }
+    const modes = await PaymentModeConfig.find().sort({ createdAt: 1 });
     res.json(modes);
   } catch (err) {
     res.status(500).json({ message: err.message });

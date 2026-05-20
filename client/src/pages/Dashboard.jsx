@@ -10,12 +10,8 @@ import {
   HiOutlineExclamation,
 } from 'react-icons/hi';
 
-const STATUS_BADGE = {
-  PAID: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20',
-  REGISTERED: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20',
-  DECLINED: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20',
-  NEXT_EDITION_INTEREST: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
-};
+const COLOR_MAP = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b', purple: '#8b5cf6', indigo: '#6366f1' };
+const resolveColor = (c) => COLOR_MAP[c] || c || '#6366f1';
 
 function StatCard({ icon: Icon, label, value, gradient, sub, trend }) {
   return (
@@ -43,6 +39,20 @@ export default function Dashboard() {
     queryKey: ['dashboard'],
     queryFn: () => api.get('/dashboard').then((r) => r.data),
   });
+
+  const { data: statusesData = [] } = useQuery({
+    queryKey: ['admin', 'statuses'],
+    queryFn: () => api.get('/admin/statuses').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+
+  const getStatusStyle = (statusName) => {
+    const found = statusesData.find((s) => s.name === statusName);
+    if (!found) return {};
+    const hex = resolveColor(found.color);
+    return { backgroundColor: hex + '22', color: hex, borderColor: hex + '44' };
+  };
+  const getStatusLabel = (statusName) => statusesData.find((s) => s.name === statusName)?.label || statusName;
 
   if (isLoading) {
     return (
@@ -143,7 +153,7 @@ export default function Dashboard() {
                       <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{client.email}</p>
                     </div>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-lg font-medium whitespace-nowrap ml-2 ${STATUS_BADGE[client.status]}`}>{client.status}</span>
+                  <span className="text-xs px-2 py-1 rounded-lg font-medium whitespace-nowrap ml-2 border" style={getStatusStyle(client.status)}>{getStatusLabel(client.status)}</span>
                 </Link>
               ))
             ) : (

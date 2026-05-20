@@ -6,12 +6,8 @@ import toast from 'react-hot-toast';
 import { HiOutlinePencil, HiOutlinePlus, HiOutlineArrowLeft, HiOutlineCheck } from 'react-icons/hi';
 import Dropdown from '../components/Dropdown';
 
-const STATUS_BADGE = {
-  REGISTERED: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20',
-  PAID: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20',
-  DECLINED: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20',
-  NEXT_EDITION_INTEREST: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
-};
+const COLOR_MAP = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b', purple: '#8b5cf6', indigo: '#6366f1' };
+const resolveColor = (c) => COLOR_MAP[c] || c || '#6366f1';
 
 const inputCls = 'w-full px-4 py-2.5 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
 const labelCls = 'block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider';
@@ -153,6 +149,20 @@ export default function ClientDetails() {
     enabled: Boolean(id),
   });
 
+  const { data: statusesData = [] } = useQuery({
+    queryKey: ['admin', 'statuses'],
+    queryFn: () => api.get('/admin/statuses').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+
+  const getStatusStyle = (statusName) => {
+    const found = statusesData.find((s) => s.name === statusName);
+    if (!found) return {};
+    const hex = resolveColor(found.color);
+    return { backgroundColor: hex + '22', color: hex, borderColor: hex + '44' };
+  };
+  const getStatusLabel = (statusName) => statusesData.find((s) => s.name === statusName)?.label || statusName;
+
   const { data: paymentModesData = [] } = useQuery({
     queryKey: ['admin', 'payment-modes'],
     queryFn: () => api.get('/admin/payment-modes').then((r) => r.data),
@@ -261,8 +271,8 @@ export default function ClientDetails() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`text-xs px-3 py-1.5 rounded-xl font-medium ${STATUS_BADGE[client.status] || 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-400'}`}>
-              {client.status}
+            <span className="text-xs px-3 py-1.5 rounded-xl font-medium border" style={getStatusStyle(client.status)}>
+              {getStatusLabel(client.status)}
             </span>
             <Link
               to={`/clients/${id}/edit`}
