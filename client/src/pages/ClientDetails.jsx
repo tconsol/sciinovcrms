@@ -12,15 +12,6 @@ const resolveColor = (c) => COLOR_MAP[c] || c || '#6366f1';
 const inputCls = 'w-full px-4 py-2.5 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
 const labelCls = 'block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider';
 
-const OUTCOME_OPTIONS = [
-  { value: 'Interested', label: 'Interested' },
-  { value: 'Not Interested', label: 'Not Interested' },
-  { value: 'Callback Requested', label: 'Callback Requested' },
-  { value: 'No Response', label: 'No Response' },
-  { value: 'Confirmed', label: 'Confirmed' },
-  { value: 'Declined', label: 'Declined' },
-  { value: 'Other', label: 'Other' },
-];
 
 function Info({ label, value }) {
   return (
@@ -126,7 +117,7 @@ export default function ClientDetails() {
   const [showConvForm, setShowConvForm] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
-    amountPaid: '', actualFee: '', discount: '0', paymentMode: '', transactionId: '',
+    amountPaid: '0', actualFee: '0', discount: '0', paymentMode: '', transactionId: '', conference: '', followUpId: '',
   });
   const [convForm, setConvForm] = useState({
     followUpDate: '', conference: '', topic: '', outcome: '', notes: '',
@@ -174,7 +165,7 @@ export default function ClientDetails() {
     onSuccess: () => {
       toast.success('Payment added');
       setShowPaymentForm(false);
-      setPaymentForm({ amountPaid: '', actualFee: '', discount: '0', paymentMode: '', transactionId: '' });
+      setPaymentForm({ amountPaid: '0', actualFee: '0', discount: '0', paymentMode: '', transactionId: '', conference: '', followUpId: '' });
       queryClient.invalidateQueries({ queryKey: ['payments', 'client', id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
@@ -365,9 +356,10 @@ export default function ClientDetails() {
                   options={clientTopics} placeholder="Select topic" />
               </div>
               <div>
-                <label className={labelCls}>Outcome</label>
+                <label className={labelCls}>Status</label>
                 <Dropdown value={convForm.outcome} onChange={(v) => setConvForm((f) => ({ ...f, outcome: v }))}
-                  options={OUTCOME_OPTIONS} placeholder="Select outcome" />
+                  options={[{ value: '', label: 'Select status' }, ...statusesData.map((s) => ({ value: s.name, label: s.label || s.name }))]}
+                  placeholder="Select status" />
               </div>
             </div>
             <div>
@@ -394,22 +386,25 @@ export default function ClientDetails() {
             <h4 className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Add Payment</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className={labelCls}>Amount Paid *</label>
-                <input type="number" placeholder="0" value={paymentForm.amountPaid}
-                  onChange={(e) => setPaymentForm((f) => ({ ...f, amountPaid: e.target.value }))}
-                  required className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Actual Fee *</label>
-                <input type="number" placeholder="0" value={paymentForm.actualFee}
+                <label className={labelCls}>Actual Fee ($) *</label>
+                <input type="number" min="0" placeholder="0" value={paymentForm.actualFee}
+                  onWheel={(e) => e.target.blur()}
                   onChange={(e) => setPaymentForm((f) => ({ ...f, actualFee: e.target.value }))}
                   required className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>Discount</label>
-                <input type="number" placeholder="0" value={paymentForm.discount}
+                <label className={labelCls}>Discount ($)</label>
+                <input type="number" min="0" placeholder="0" value={paymentForm.discount}
+                  onWheel={(e) => e.target.blur()}
                   onChange={(e) => setPaymentForm((f) => ({ ...f, discount: e.target.value }))}
                   className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Amount Paid ($) *</label>
+                <input type="number" min="0" placeholder="0" value={paymentForm.amountPaid}
+                  onWheel={(e) => e.target.blur()}
+                  onChange={(e) => setPaymentForm((f) => ({ ...f, amountPaid: e.target.value }))}
+                  required className={inputCls} />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -419,6 +414,27 @@ export default function ClientDetails() {
                   onChange={(v) => setPaymentForm((f) => ({ ...f, paymentMode: v }))}
                   options={paymentModesData.filter((m) => m.isActive).map((m) => ({ value: m.name, label: m.label || m.name }))}
                   placeholder="Select mode" />
+              </div>
+              <div>
+                <label className={labelCls}>Conference</label>
+                <Dropdown value={paymentForm.conference}
+                  onChange={(v) => setPaymentForm((f) => ({ ...f, conference: v, followUpId: '' }))}
+                  options={[{ value: '', label: 'None' }, ...clientConferences]}
+                  placeholder="Select conference" />
+              </div>
+              <div>
+                <label className={labelCls}>Link Conversation (optional)</label>
+                <Dropdown value={paymentForm.followUpId}
+                  onChange={(v) => setPaymentForm((f) => ({ ...f, followUpId: v }))}
+                  options={[
+                    { value: '', label: 'None' },
+                    ...(paymentForm.conference
+                      ? conversations.filter((c) => (c.conference || '') === paymentForm.conference)
+                      : conversations
+                    ).sort((a, b) => new Date(a.followUpDate) - new Date(b.followUpDate))
+                      .map((c, i) => ({ value: c._id, label: `#${i + 1} · ${c.outcome || 'No status'} · ${new Date(c.followUpDate).toLocaleDateString()}` })),
+                  ]}
+                  placeholder="Link conversation (optional)" />
               </div>
               <div>
                 <label className={labelCls}>Transaction ID</label>

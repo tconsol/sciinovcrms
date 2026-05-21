@@ -7,18 +7,6 @@ import Dropdown from '../components/Dropdown';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { HiOutlineSearch, HiOutlinePlus, HiOutlineX, HiOutlinePencil, HiOutlineTrash, HiOutlineCheck } from 'react-icons/hi';
 
-const OUTCOME_OPTIONS = [
-  { value: '', label: 'All Outcomes' },
-  { value: 'Interested', label: 'Interested' },
-  { value: 'Not Interested', label: 'Not Interested' },
-  { value: 'Callback Requested', label: 'Callback Requested' },
-  { value: 'No Response', label: 'No Response' },
-  { value: 'Confirmed', label: 'Confirmed' },
-  { value: 'Declined', label: 'Declined' },
-  { value: 'Other', label: 'Other' },
-];
-
-const OUTCOME_FORM_OPTIONS = OUTCOME_OPTIONS.slice(1);
 
 const paginationBtnCls =
   'px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 rounded-lg disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-white transition';
@@ -87,6 +75,11 @@ export default function History() {
   const { data: paymentModesData = [] } = useQuery({
     queryKey: ['admin', 'payment-modes'],
     queryFn: () => api.get('/admin/payment-modes').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+  const { data: statusesData = [] } = useQuery({
+    queryKey: ['admin', 'statuses'],
+    queryFn: () => api.get('/admin/statuses').then((r) => r.data),
     staleTime: 5 * 60_000,
   });
 
@@ -204,8 +197,8 @@ export default function History() {
   const handleConvSubmit = (e) => {
     e.preventDefault();
     setFormError('');
-    if (!convForm.followUpDate || !convForm.conference || !convForm.topic || !convForm.outcome) {
-      return setFormError('Date, conference, topic, and outcome are required');
+    if (!convForm.followUpDate || !convForm.conference || !convForm.topic) {
+      return setFormError('Date, conference, and topic are required');
     }
     addConvMutation.mutate({ ...convForm, clientId: targetClient._id });
   };
@@ -354,15 +347,15 @@ export default function History() {
               />
             </div>
             <div>
-              <label className={labelCls}>Outcome *</label>
+              <label className={labelCls}>Conversation Status</label>
               <Dropdown
                 value={convForm.outcome}
                 onChange={(v) => setConvForm((f) => ({ ...f, outcome: v }))}
                 options={[
-                  { value: '', label: 'Select outcome' },
-                  ...OUTCOME_FORM_OPTIONS,
+                  { value: '', label: 'Select status' },
+                  ...statusesData.map((s) => ({ value: s.name, label: s.label || s.name })),
                 ]}
-                placeholder="Select outcome"
+                placeholder="Select status"
               />
             </div>
             <div>
@@ -426,16 +419,7 @@ export default function History() {
                 min="0"
                 value={payForm.actualFee}
                 onWheel={(e) => e.target.blur()}
-                onChange={(e) => {
-                  const actualFee = e.target.value;
-                  setPayForm((f) => {
-                    const fee = parseFloat(actualFee) || 0;
-                    const paid = parseFloat(f.amountPaid);
-                    const disc = parseFloat(f.discount) || 0;
-                    if (!isNaN(paid)) return { ...f, actualFee, discount: String(Math.max(0, fee - paid)) };
-                    return { ...f, actualFee, amountPaid: String(Math.max(0, fee - disc)) };
-                  });
-                }}
+                onChange={(e) => setPayForm((f) => ({ ...f, actualFee: e.target.value }))}
                 placeholder="0"
                 className={inputCls}
                 required
@@ -448,14 +432,7 @@ export default function History() {
                 min="0"
                 value={payForm.discount}
                 onWheel={(e) => e.target.blur()}
-                onChange={(e) => {
-                  const discount = e.target.value;
-                  setPayForm((f) => {
-                    const fee = parseFloat(f.actualFee) || 0;
-                    const disc = parseFloat(discount) || 0;
-                    return { ...f, discount, amountPaid: String(Math.max(0, fee - disc)) };
-                  });
-                }}
+                onChange={(e) => setPayForm((f) => ({ ...f, discount: e.target.value }))}
                 placeholder="0"
                 className={inputCls}
               />
@@ -467,14 +444,7 @@ export default function History() {
                 min="0"
                 value={payForm.amountPaid}
                 onWheel={(e) => e.target.blur()}
-                onChange={(e) => {
-                  const amountPaid = e.target.value;
-                  setPayForm((f) => {
-                    const fee = parseFloat(f.actualFee) || 0;
-                    const paid = parseFloat(amountPaid) || 0;
-                    return { ...f, amountPaid, discount: String(Math.max(0, fee - paid)) };
-                  });
-                }}
+                onChange={(e) => setPayForm((f) => ({ ...f, amountPaid: e.target.value }))}
                 placeholder="0"
                 className={inputCls}
                 required
@@ -741,8 +711,8 @@ export default function History() {
           <Dropdown
             value={outcomeFilter}
             onChange={(v) => { setOutcomeFilter(v); setPage(1); }}
-            options={OUTCOME_OPTIONS}
-            placeholder="Filter by Outcome"
+            options={[{ value: '', label: 'All Statuses' }, ...statusesData.map((s) => ({ value: s.name, label: s.label || s.name }))]}
+            placeholder="Filter by Status"
           />
           <Dropdown
             value={statusFilter}

@@ -17,15 +17,6 @@ const paginationBtnCls = 'px-3 py-1.5 text-xs border border-gray-200 dark:border
 const inputCls = 'w-full px-3 py-2 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
 const labelCls = 'block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wider';
 
-const OUTCOME_OPTIONS = [
-  { value: 'Interested', label: 'Interested' },
-  { value: 'Not Interested', label: 'Not Interested' },
-  { value: 'Callback Requested', label: 'Callback Requested' },
-  { value: 'No Response', label: 'No Response' },
-  { value: 'Confirmed', label: 'Confirmed' },
-  { value: 'Declined', label: 'Declined' },
-  { value: 'Other', label: 'Other' },
-];
 
 // ─── Inline Conversations Panel ───────────────────────────────────────────────
 
@@ -48,6 +39,11 @@ function ClientConversationsPanel({ client }) {
   const { data: paymentModesData = [] } = useQuery({
     queryKey: ['admin', 'payment-modes'],
     queryFn: () => api.get('/admin/payment-modes').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+  const { data: statusesData = [] } = useQuery({
+    queryKey: ['admin', 'statuses'],
+    queryFn: () => api.get('/admin/statuses').then((r) => r.data),
     staleTime: 5 * 60_000,
   });
 
@@ -164,9 +160,10 @@ function ClientConversationsPanel({ client }) {
                 options={clientTopics} placeholder="Select topic" />
             </div>
             <div>
-              <label className={labelCls}>Outcome</label>
+              <label className={labelCls}>Status</label>
               <Dropdown value={convForm.outcome} onChange={(v) => setConvForm((f) => ({ ...f, outcome: v }))}
-                options={OUTCOME_OPTIONS} placeholder="Select outcome" />
+                options={[{ value: '', label: 'Select status' }, ...statusesData.map((s) => ({ value: s.name, label: s.label || s.name }))]}
+                placeholder="Select status" />
             </div>
           </div>
           <div>
@@ -312,6 +309,8 @@ export default function ClientsList() {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ status: '', role: '' });
+  const [topicFilter, setTopicFilter] = useState('');
+  const [conferenceFilter, setConferenceFilter] = useState('');
   const [deleteId, setDeleteId] = useState(null);
 
   const { data: rolesData } = useQuery({
@@ -325,14 +324,29 @@ export default function ClientsList() {
     queryFn: () => api.get('/admin/statuses').then((r) => r.data),
     staleTime: 5 * 60_000,
   });
+  const { data: confsData = [] } = useQuery({
+    queryKey: ['admin', 'conferences'],
+    queryFn: () => api.get('/admin/conferences').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+  const { data: sciData = [] } = useQuery({
+    queryKey: ['sciinov', 'conferences'],
+    queryFn: () => api.get('/sciinov/conferences').then((r) => r.data).catch(() => []),
+    staleTime: 10 * 60_000,
+  });
+
+  const activeConferences = confsData.filter((c) => c.isActive);
+  const allTopics = Array.isArray(sciData) ? sciData : [];
 
   const { data, isLoading } = useQuery({
-    queryKey: ['clients', { page, limit, search, ...filters }],
+    queryKey: ['clients', { page, limit, search, topicFilter, conferenceFilter, ...filters }],
     queryFn: () => {
       const params = { page, limit };
       if (search) params.search = search;
       if (filters.status) params.status = filters.status;
       if (filters.role) params.role = filters.role;
+      if (topicFilter) params.topic = topicFilter;
+      if (conferenceFilter) params.conference = conferenceFilter;
       return api.get('/clients', { params }).then((r) => r.data);
     },
     placeholderData: keepPreviousData,
@@ -389,6 +403,12 @@ export default function ClientsList() {
           <Dropdown value={filters.role} onChange={(value) => { setFilters((f) => ({ ...f, role: value })); setPage(1); }}
             options={[{ value: '', label: 'All Roles' }, ...roles.map((r) => ({ value: r.name, label: r.label || r.name }))]}
             placeholder="Filter by Role" />
+          <Dropdown value={conferenceFilter} onChange={(v) => { setConferenceFilter(v); setPage(1); }}
+            options={[{ value: '', label: 'All Conferences' }, ...activeConferences.map((c) => ({ value: c.name, label: c.name }))]}
+            placeholder="Filter by Conference" />
+          <Dropdown value={topicFilter} onChange={(v) => { setTopicFilter(v); setPage(1); }}
+            options={[{ value: '', label: 'All Topics' }, ...allTopics.map((t) => ({ value: t.name || t.title, label: t.name || t.title }))]}
+            placeholder="Filter by Topic" />
         </div>
       </div>
 

@@ -9,21 +9,12 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi';
 
 const paginationBtnCls = 'px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 rounded-lg disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-white transition';
+const COLOR_MAP = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b', purple: '#8b5cf6', indigo: '#6366f1' };
 
-const OUTCOME_OPTIONS = [
-  { value: '', label: 'All Outcomes' },
-  { value: 'Interested', label: 'Interested' },
-  { value: 'Not Interested', label: 'Not Interested' },
-  { value: 'Callback Requested', label: 'Callback Requested' },
-  { value: 'No Response', label: 'No Response' },
-  { value: 'Confirmed', label: 'Confirmed' },
-  { value: 'Declined', label: 'Declined' },
-  { value: 'Other', label: 'Other' },
-];
 
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 
-function ConversationModal({ conversation: c, onClose }) {
+function ConversationModal({ conversation: c, onClose, payment }) {
   if (!c) return null;
   const isOverdue = c.status === 'PENDING' && new Date(c.followUpDate) < new Date();
 
@@ -94,6 +85,16 @@ function ConversationModal({ conversation: c, onClose }) {
             </div>
           )}
 
+          {payment && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Linked Payment</span>
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">${payment.amountPaid.toLocaleString()}</span>
+                <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-lg">{payment.paymentMode}</span>
+              </div>
+              <span className="text-xs text-gray-400 dark:text-slate-500">{new Date(payment.paymentDate).toLocaleDateString()}</span>
+            </div>
+          )}
           <p className="text-xs text-gray-400 dark:text-slate-500">
             Created {new Date(c.createdAt).toLocaleString()}
           </p>
@@ -127,6 +128,16 @@ export default function Conversations() {
     queryKey: ['sciinov', 'conferences'],
     queryFn: () => api.get('/sciinov/conferences').then((r) => r.data).catch(() => []),
     staleTime: 10 * 60_000,
+  });
+  const { data: statusesData = [] } = useQuery({
+    queryKey: ['admin', 'statuses'],
+    queryFn: () => api.get('/admin/statuses').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+  const { data: allPaymentsData } = useQuery({
+    queryKey: ['payments', 'all-linked'],
+    queryFn: () => api.get('/payments', { params: { limit: 1000 } }).then((r) => r.data),
+    staleTime: 60_000,
   });
 
   const activeConferences = confsData.filter((c) => c.isActive);
@@ -172,6 +183,11 @@ export default function Conversations() {
   const pagination = data?.pagination || { page: 1, pages: 1, total: 0 };
   const hasActiveFilter = search || statusFilter || conferenceFilter || topicFilter || outcomeFilter || showOverdue;
 
+  const paymentByFollowUpId = {};
+  (allPaymentsData?.payments || []).forEach((p) => {
+    if (p.followUpId) paymentByFollowUpId[String(p.followUpId)] = p;
+  });
+
   const resetFilters = () => {
     setSearch(''); setStatusFilter(''); setConferenceFilter('');
     setTopicFilter(''); setOutcomeFilter(''); setShowOverdue(false); setPage(1);
@@ -202,7 +218,8 @@ export default function Conversations() {
             options={[{ value: '', label: 'All Topics' }, ...topics.map((t) => ({ value: t.name || t.title, label: t.name || t.title }))]}
             placeholder="Filter by Topic" />
           <Dropdown value={outcomeFilter} onChange={(v) => { setOutcomeFilter(v); setPage(1); }}
-            options={OUTCOME_OPTIONS} placeholder="Filter by Outcome" />
+            options={[{ value: '', label: 'All Statuses' }, ...statusesData.map((s) => ({ value: s.name, label: s.label || s.name }))]}
+            placeholder="Filter by Status" />
           <Dropdown value={statusFilter} onChange={(v) => { setStatusFilter(v); if (v) setShowOverdue(false); setPage(1); }}
             options={[{ value: '', label: 'All Statuses' }, { value: 'PENDING', label: 'Pending' }, { value: 'COMPLETED', label: 'Completed' }]}
             placeholder="Filter by Status" />
@@ -240,7 +257,7 @@ export default function Conversations() {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-transparent">
-                  {['Client', 'Date', 'Conference', 'Topic', 'Outcome', 'Notes', 'Status', 'Actions'].map((h) => (
+                  {['Client', 'Date', 'Conference', 'Topic', 'Status', 'Payment', 'Notes', 'Conv Status', 'Actions'].map((h) => (
                     <th key={h} className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -285,8 +302,18 @@ export default function Conversations() {
                           : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
                       </td>
                       <td className="px-3 py-2.5 whitespace-nowrap">
-                        {f.outcome
-                          ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">{f.outcome}</span>
+                        {f.outcome ? (() => {
+                          const st = statusesData.find((s) => s.name === f.outcome);
+                          if (st) {
+                            const hex = COLOR_MAP[st.color] || st.color || '#6366f1';
+                            return <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium border" style={{ backgroundColor: hex + '22', color: hex, borderColor: hex + '44' }}>{st.label}</span>;
+                          }
+                          return <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">{f.outcome}</span>;
+                        })() : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        {paymentByFollowUpId[f._id]
+                          ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold">${paymentByFollowUpId[f._id].amountPaid.toLocaleString()}</span>
                           : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
                       </td>
                       <td className="px-3 py-2.5 text-xs text-gray-400 dark:text-slate-500 max-w-[140px] truncate">{f.notes || '—'}</td>
@@ -324,7 +351,7 @@ export default function Conversations() {
         )}
       </div>
 
-      <ConversationModal conversation={selectedConv} onClose={() => setSelectedConv(null)} />
+      <ConversationModal conversation={selectedConv} onClose={() => setSelectedConv(null)} payment={selectedConv ? paymentByFollowUpId[selectedConv._id] : null} />
 
       <ConfirmDialog
         isOpen={Boolean(deleteId)}

@@ -220,46 +220,21 @@ export default function ClientForm() {
                 <label className={labelCls}>Actual Fee ($) *</label>
                 <input type="number" min="0" placeholder="0" value={paymentForm.actualFee}
                   onWheel={(e) => e.target.blur()}
-                  onChange={(e) => {
-                    const actualFee = e.target.value;
-                    setPaymentForm((f) => {
-                      const fee = parseFloat(actualFee) || 0;
-                      const disc = parseFloat(f.discount) || 0;
-                      const paid = parseFloat(f.amountPaid);
-                      if (!isNaN(paid)) {
-                        return { ...f, actualFee, discount: String(Math.max(0, fee - paid)) };
-                      }
-                      return { ...f, actualFee, amountPaid: String(Math.max(0, fee - disc)) };
-                    });
-                  }}
+                  onChange={(e) => setPaymentForm((f) => ({ ...f, actualFee: e.target.value }))}
                   className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Discount ($)</label>
                 <input type="number" min="0" placeholder="0" value={paymentForm.discount}
                   onWheel={(e) => e.target.blur()}
-                  onChange={(e) => {
-                    const discount = e.target.value;
-                    setPaymentForm((f) => {
-                      const fee = parseFloat(f.actualFee) || 0;
-                      const disc = parseFloat(discount) || 0;
-                      return { ...f, discount, amountPaid: String(Math.max(0, fee - disc)) };
-                    });
-                  }}
+                  onChange={(e) => setPaymentForm((f) => ({ ...f, discount: e.target.value }))}
                   className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Amount Paid ($) *</label>
                 <input type="number" min="0" placeholder="0" value={paymentForm.amountPaid}
                   onWheel={(e) => e.target.blur()}
-                  onChange={(e) => {
-                    const amountPaid = e.target.value;
-                    setPaymentForm((f) => {
-                      const fee = parseFloat(f.actualFee) || 0;
-                      const paid = parseFloat(amountPaid) || 0;
-                      return { ...f, amountPaid, discount: String(Math.max(0, fee - paid)) };
-                    });
-                  }}
+                  onChange={(e) => setPaymentForm((f) => ({ ...f, amountPaid: e.target.value }))}
                   className={inputCls} />
               </div>
             </div>

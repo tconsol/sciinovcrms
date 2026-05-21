@@ -37,6 +37,8 @@ exports.getClients = async (req, res) => {
       search,
       status,
       role,
+      topic,
+      conference,
       conferenceId,
       startDate,
       endDate,
@@ -55,6 +57,8 @@ exports.getClients = async (req, res) => {
 
     if (status) filter.status = status;
     if (role) filter.role = role;
+    if (topic) filter.topics = topic;
+    if (conference) filter.conferenceNames = conference;
     if (conferenceId) filter.conferenceId = conferenceId;
 
     if (startDate || endDate) {
