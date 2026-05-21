@@ -1,109 +1,14 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { createPortal } from 'react-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import Dropdown from '../components/Dropdown';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi';
+import { HiOutlineSearch, HiOutlineChevronDown, HiOutlineChevronUp } from 'react-icons/hi';
 
 const paginationBtnCls = 'px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 rounded-lg disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-white transition';
 const COLOR_MAP = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b', purple: '#8b5cf6', indigo: '#6366f1' };
-
-
-// ─── Detail Modal ─────────────────────────────────────────────────────────────
-
-function ConversationModal({ conversation: c, onClose, payment }) {
-  if (!c) return null;
-  const isOverdue = c.status === 'PENDING' && new Date(c.followUpDate) < new Date();
-
-  return createPortal(
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/[0.06]">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white">Conversation Details</h3>
-          <button type="button" onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-400 dark:text-slate-500 transition">
-            <HiOutlineX className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Client</p>
-              {c.clientId ? (
-                <Link to={`/clients/${c.clientId._id}`} onClick={onClose}
-                  className="text-sm font-semibold text-violet-600 dark:text-violet-400 hover:underline">
-                  {c.clientId.fullName}
-                </Link>
-              ) : <p className="text-sm text-gray-700 dark:text-slate-200">—</p>}
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
-              <p className={`text-sm font-medium ${isOverdue ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-slate-200'}`}>
-                {new Date(c.followUpDate).toLocaleString()}
-                {isOverdue && <span className="ml-1.5 text-xs bg-red-100 dark:bg-red-500/10 px-1.5 py-0.5 rounded font-semibold">OVERDUE</span>}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Conference</p>
-              {c.conference
-                ? <span className="text-xs px-2 py-1 rounded-lg bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-medium">{c.conference}</span>
-                : <p className="text-sm text-gray-400 dark:text-slate-500">—</p>}
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Topic</p>
-              {c.topic
-                ? <span className="text-xs px-2 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium">{c.topic}</span>
-                : <p className="text-sm text-gray-400 dark:text-slate-500">—</p>}
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Outcome</p>
-              {c.outcome
-                ? <span className="text-xs px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">{c.outcome}</span>
-                : <p className="text-sm text-gray-400 dark:text-slate-500">—</p>}
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Status</p>
-              <span className={`text-xs px-2 py-1 rounded-lg font-medium border ${
-                c.status === 'COMPLETED'
-                  ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
-                  : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
-              }`}>{c.status}</span>
-            </div>
-          </div>
-
-          {c.notes && (
-            <div>
-              <p className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Notes</p>
-              <p className="text-sm text-gray-700 dark:text-slate-200 bg-gray-50 dark:bg-white/[0.04] rounded-xl px-3 py-2.5 italic">"{c.notes}"</p>
-            </div>
-          )}
-
-          {payment && (
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Linked Payment</span>
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">${payment.amountPaid.toLocaleString()}</span>
-                <span className="text-xs text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-lg">{payment.paymentMode}</span>
-              </div>
-              <span className="text-xs text-gray-400 dark:text-slate-500">{new Date(payment.paymentDate).toLocaleDateString()}</span>
-            </div>
-          )}
-          <p className="text-xs text-gray-400 dark:text-slate-500">
-            Created {new Date(c.createdAt).toLocaleString()}
-          </p>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -257,92 +162,166 @@ export default function Conversations() {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-transparent">
-                  {['Client', 'Date', 'Conference', 'Topic', 'Status', 'Payment', 'Notes', 'Conv Status', 'Actions'].map((h) => (
+                  {['Client', 'Date', 'Conference', 'Topic', 'Status', 'Payment', 'Conv Status', 'Actions'].map((h) => (
                     <th key={h} className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-white/[0.04]">
+              <tbody>
                 {conversations.map((f) => {
                   const isOverdue = f.status === 'PENDING' && new Date(f.followUpDate) < new Date();
+                  const isExpanded = selectedConv?._id === f._id;
+                  const linkedPayment = paymentByFollowUpId[f._id];
+                  const outcomeSt = statusesData.find((s) => s.name === f.outcome);
+                  const outcomeHex = outcomeSt ? (COLOR_MAP[outcomeSt.color] || outcomeSt.color || '#6366f1') : null;
+
                   return (
-                    <tr
-                      key={f._id}
-                      onClick={() => setSelectedConv(f)}
-                      className={`cursor-pointer transition-colors ${isOverdue ? 'bg-red-50 dark:bg-red-500/[0.04]' : 'hover:bg-violet-50/50 dark:hover:bg-violet-500/[0.04]'}`}
-                    >
-                      <td className="px-3 py-2.5 text-xs">
-                        {f.clientId ? (
-                          <span
-                            className="font-semibold text-violet-600 dark:text-violet-400"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Link to={`/clients/${f.clientId._id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
-                              {f.clientId.fullName}
-                            </Link>
+                    <React.Fragment key={f._id}>
+                      <tr
+                        onClick={() => setSelectedConv(isExpanded ? null : f)}
+                        className={`border-b border-gray-100 dark:border-white/[0.04] transition-colors cursor-pointer ${
+                          isExpanded
+                            ? 'bg-violet-50/60 dark:bg-violet-500/[0.06]'
+                            : isOverdue
+                            ? 'bg-red-50 dark:bg-red-500/[0.04] hover:bg-red-50 dark:hover:bg-red-500/[0.06]'
+                            : 'hover:bg-gray-50 dark:hover:bg-white/[0.03]'
+                        }`}
+                      >
+                        <td className="px-3 py-2.5 text-xs" onClick={(e) => e.stopPropagation()}>
+                          {f.clientId
+                            ? <Link to={`/clients/${f.clientId._id}`} className="font-semibold text-violet-600 dark:text-violet-400 hover:underline">{f.clientId.fullName}</Link>
+                            : '—'}
+                        </td>
+                        <td className="px-3 py-2.5 text-xs whitespace-nowrap">
+                          <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-slate-300'}>
+                            {new Date(f.followUpDate).toLocaleString()}
                           </span>
-                        ) : '—'}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs whitespace-nowrap">
-                        <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-slate-300'}>
-                          {new Date(f.followUpDate).toLocaleString()}
-                        </span>
-                        {isOverdue && (
-                          <span className="ml-1.5 text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/10 px-1 py-0.5 rounded">OD</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5 max-w-[110px]">
-                        {f.conference
-                          ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-medium block truncate">{f.conference}</span>
-                          : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
-                      </td>
-                      <td className="px-3 py-2.5 max-w-[110px]">
-                        {f.topic
-                          ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium block truncate">{f.topic}</span>
-                          : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
-                      </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        {f.outcome ? (() => {
-                          const st = statusesData.find((s) => s.name === f.outcome);
-                          if (st) {
-                            const hex = COLOR_MAP[st.color] || st.color || '#6366f1';
-                            return <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium border" style={{ backgroundColor: hex + '22', color: hex, borderColor: hex + '44' }}>{st.label}</span>;
-                          }
-                          return <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">{f.outcome}</span>;
-                        })() : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
-                      </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        {paymentByFollowUpId[f._id]
-                          ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold">${paymentByFollowUpId[f._id].amountPaid.toLocaleString()}</span>
-                          : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
-                      </td>
-                      <td className="px-3 py-2.5 text-xs text-gray-400 dark:text-slate-500 max-w-[140px] truncate">{f.notes || '—'}</td>
-                      <td className="px-3 py-2.5 whitespace-nowrap">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
-                          f.status === 'COMPLETED'
-                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
-                            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
-                        }`}>{f.status}</span>
-                      </td>
-                      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1.5">
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setSelectedConv(f); }}
-                            className="text-[10px] px-2 py-0.5 bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20 rounded-md hover:bg-violet-100 dark:hover:bg-violet-500/20 transition font-semibold whitespace-nowrap">
-                            View
-                          </button>
-                          {f.status === 'PENDING' && (
-                            <button type="button" onClick={() => markCompleteMutation.mutate(f._id)}
-                              className="text-[10px] px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition font-semibold whitespace-nowrap">
-                              Complete
+                          {isOverdue && <span className="ml-1 text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/10 px-1 py-0.5 rounded">OD</span>}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          {f.conference
+                            ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-medium whitespace-nowrap">{f.conference}</span>
+                            : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          {f.topic
+                            ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium whitespace-nowrap">{f.topic}</span>
+                            : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          {outcomeSt
+                            ? <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium border" style={{ backgroundColor: outcomeHex + '22', color: outcomeHex, borderColor: outcomeHex + '44' }}>{outcomeSt.label}</span>
+                            : f.outcome
+                            ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">{f.outcome}</span>
+                            : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          {linkedPayment
+                            ? <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-semibold">${linkedPayment.amountPaid.toLocaleString()}</span>
+                            : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 whitespace-nowrap">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
+                            f.status === 'COMPLETED'
+                              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
+                              : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
+                          }`}>{f.status}</span>
+                        </td>
+                        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedConv(isExpanded ? null : f)}
+                              className={`p-1 rounded-md transition ${isExpanded ? 'text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/20' : 'text-gray-400 dark:text-slate-500 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10'}`}
+                              title={isExpanded ? 'Collapse' : 'Expand'}
+                            >
+                              {isExpanded ? <HiOutlineChevronUp className="w-3.5 h-3.5" /> : <HiOutlineChevronDown className="w-3.5 h-3.5" />}
                             </button>
-                          )}
-                          <button type="button" onClick={() => setDeleteId(f._id)}
-                            className="text-[10px] px-2 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 transition font-semibold">
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                            {f.status === 'PENDING' && (
+                              <button type="button" onClick={() => markCompleteMutation.mutate(f._id)}
+                                className="text-[10px] px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition font-semibold whitespace-nowrap">
+                                Complete
+                              </button>
+                            )}
+                            <button type="button" onClick={() => setDeleteId(f._id)}
+                              className="text-[10px] px-2 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 transition font-semibold">
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {isExpanded && (
+                        <tr key={`${f._id}-detail`} className="bg-violet-50/40 dark:bg-violet-500/[0.04] border-b border-violet-100 dark:border-violet-500/20">
+                          <td colSpan={8} className="px-5 py-4">
+                            <div className="flex flex-wrap gap-x-8 gap-y-3 mb-3">
+                              <div>
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Client</p>
+                                {f.clientId
+                                  ? <Link to={`/clients/${f.clientId._id}`} className="text-sm font-semibold text-violet-600 dark:text-violet-400 hover:underline">{f.clientId.fullName}</Link>
+                                  : <p className="text-sm text-gray-500 dark:text-slate-400">—</p>}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
+                                <p className={`text-sm font-medium whitespace-nowrap ${isOverdue ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-slate-200'}`}>
+                                  {new Date(f.followUpDate).toLocaleString()}
+                                  {isOverdue && <span className="ml-1.5 text-[10px] bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold">OVERDUE</span>}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Conference</p>
+                                {f.conference
+                                  ? <span className="text-xs px-2.5 py-1 rounded-lg bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300 font-medium inline-block whitespace-nowrap">{f.conference}</span>
+                                  : <p className="text-sm text-gray-400 dark:text-slate-500">—</p>}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Topic</p>
+                                {f.topic
+                                  ? <span className="text-xs px-2.5 py-1 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium inline-block whitespace-nowrap">{f.topic}</span>
+                                  : <p className="text-sm text-gray-400 dark:text-slate-500">—</p>}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Status</p>
+                                {outcomeSt
+                                  ? <span className="text-xs px-2.5 py-1 rounded-lg font-medium border whitespace-nowrap" style={{ backgroundColor: outcomeHex + '22', color: outcomeHex, borderColor: outcomeHex + '44' }}>{outcomeSt.label}</span>
+                                  : f.outcome
+                                  ? <span className="text-xs px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap">{f.outcome}</span>
+                                  : <p className="text-sm text-gray-400 dark:text-slate-500">—</p>}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Conv Status</p>
+                                <span className={`text-xs px-2.5 py-1 rounded-lg font-medium border whitespace-nowrap ${
+                                  f.status === 'COMPLETED'
+                                    ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
+                                    : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
+                                }`}>{f.status}</span>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Created</p>
+                                <p className="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">{new Date(f.createdAt).toLocaleString()}</p>
+                              </div>
+                            </div>
+                            {f.notes && (
+                              <div className="mb-3">
+                                <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-1">Notes</p>
+                                <p className="text-sm text-gray-700 dark:text-slate-200 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 italic">"{f.notes}"</p>
+                              </div>
+                            )}
+                            {linkedPayment && (
+                              <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/20 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Linked Payment</span>
+                                  <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">${linkedPayment.amountPaid.toLocaleString()}</span>
+                                  <span className="text-xs text-gray-500 dark:text-slate-400 bg-white dark:bg-white/[0.06] border border-gray-200 dark:border-white/10 px-2 py-0.5 rounded-lg">{linkedPayment.paymentMode}</span>
+                                  {linkedPayment.transactionId && <span className="text-xs text-gray-400 dark:text-slate-500">#{linkedPayment.transactionId}</span>}
+                                </div>
+                                <span className="text-xs text-gray-400 dark:text-slate-500">{new Date(linkedPayment.paymentDate).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
@@ -350,8 +329,6 @@ export default function Conversations() {
           </div>
         )}
       </div>
-
-      <ConversationModal conversation={selectedConv} onClose={() => setSelectedConv(null)} payment={selectedConv ? paymentByFollowUpId[selectedConv._id] : null} />
 
       <ConfirmDialog
         isOpen={Boolean(deleteId)}
