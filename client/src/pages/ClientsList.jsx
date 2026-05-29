@@ -9,6 +9,7 @@ import {
 } from 'react-icons/hi';
 import Dropdown from '../components/Dropdown';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useAuth } from '../context/AuthContext';
 
 const COLOR_MAP = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b', purple: '#8b5cf6', indigo: '#6366f1' };
 const resolveColor = (c) => COLOR_MAP[c] || c || '#6366f1';
@@ -305,6 +306,8 @@ function ClientConversationsPanel({ client }) {
 
 export default function ClientsList() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
@@ -463,9 +466,11 @@ export default function ClientsList() {
                         <Link to={`/clients/${client._id}/edit`} className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
                           <HiOutlinePencil className="w-4 h-4" />
                         </Link>
-                        <button type="button" onClick={() => setDeleteId(client._id)} className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
-                          <HiOutlineTrash className="w-4 h-4" />
-                        </button>
+                        {isSuperAdmin && (
+                          <button type="button" onClick={() => setDeleteId(client._id)} className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                            <HiOutlineTrash className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -476,16 +481,18 @@ export default function ClientsList() {
         )}
       </div>
 
-      <ConfirmDialog
-        isOpen={Boolean(deleteId)}
-        title="Delete Client?"
-        message="This will permanently delete the client and all associated data."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous
-        onConfirm={() => deleteMutation.mutate(deleteId)}
-        onCancel={() => setDeleteId(null)}
-      />
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deleteId)}
+          title="Delete Client?"
+          message="This will permanently delete the client and all associated data."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deleteMutation.mutate(deleteId)}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
 
       {pagination.total > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3">

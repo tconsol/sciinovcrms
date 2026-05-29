@@ -22,7 +22,7 @@ const allNavItems = [
   { to: '/clients', icon: HiOutlineUsers, label: 'Clients' },
   { to: '/conversations', icon: HiOutlineClock, label: 'Conversations' },
   { to: '/activity-logs', icon: HiOutlineClipboardList, label: 'Activity Logs', superAdminOnly: true },
-  { to: '/admin', icon: HiOutlineCog, label: 'Admin Config' },
+  { to: '/admin', icon: HiOutlineCog, label: 'Admin Config', superAdminOnly: true },
 ];
 
 const formatRole = (role) =>

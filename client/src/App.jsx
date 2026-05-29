@@ -56,7 +56,7 @@ export default function App() {
         <Route path="conversations" element={<FollowUps />} />
         <Route path="history" element={<History />} />
         <Route path="activity-logs" element={<SuperAdminRoute><ActivityLogs /></SuperAdminRoute>} />
-        <Route path="admin" element={<AdminPage />} />
+        <Route path="admin" element={<SuperAdminRoute><AdminPage /></SuperAdminRoute>} />
       </Route>
     </Routes>
   );

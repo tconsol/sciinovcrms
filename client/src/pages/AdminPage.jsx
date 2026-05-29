@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -15,7 +16,7 @@ const TABS = ['Conferences', 'Roles', 'Statuses', 'Payment Modes'];
 
 // ─── Conferences ──────────────────────────────────────────────────────────────
 
-function ConferencesTab() {
+function ConferencesTab({ isSuperAdmin }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -149,33 +150,37 @@ function ConferencesTab() {
                   className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
                   <HiOutlinePencil className="w-4 h-4" />
                 </button>
-                <button type="button" onClick={() => setDeleteId(item._id)}
-                  className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
-                  <HiOutlineTrash className="w-4 h-4" />
-                </button>
+                {isSuperAdmin && (
+                  <button type="button" onClick={() => setDeleteId(item._id)}
+                    className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                    <HiOutlineTrash className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={Boolean(deleteId)}
-        title="Delete Conference?"
-        message="This will remove the conference from the list."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous
-        onConfirm={() => deleteMutation.mutate(deleteId)}
-        onCancel={() => setDeleteId(null)}
-      />
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deleteId)}
+          title="Delete Conference?"
+          message="This will remove the conference from the list."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deleteMutation.mutate(deleteId)}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
 
-function RolesTab() {
+function RolesTab({ isSuperAdmin }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -294,33 +299,37 @@ function RolesTab() {
                   className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
                   <HiOutlinePencil className="w-4 h-4" />
                 </button>
-                <button type="button" onClick={() => setDeleteId(item._id)}
-                  className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
-                  <HiOutlineTrash className="w-4 h-4" />
-                </button>
+                {isSuperAdmin && (
+                  <button type="button" onClick={() => setDeleteId(item._id)}
+                    className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                    <HiOutlineTrash className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={Boolean(deleteId)}
-        title="Delete Role?"
-        message="This role will no longer appear in client forms."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous
-        onConfirm={() => deleteMutation.mutate(deleteId)}
-        onCancel={() => setDeleteId(null)}
-      />
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deleteId)}
+          title="Delete Role?"
+          message="This role will no longer appear in client forms."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deleteMutation.mutate(deleteId)}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ─── Statuses ─────────────────────────────────────────────────────────────────
 
-function StatusesTab() {
+function StatusesTab({ isSuperAdmin }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -448,33 +457,37 @@ function StatusesTab() {
                   className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
                   <HiOutlinePencil className="w-4 h-4" />
                 </button>
-                <button type="button" onClick={() => setDeleteId(item._id)}
-                  className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
-                  <HiOutlineTrash className="w-4 h-4" />
-                </button>
+                {isSuperAdmin && (
+                  <button type="button" onClick={() => setDeleteId(item._id)}
+                    className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                    <HiOutlineTrash className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={Boolean(deleteId)}
-        title="Delete Status?"
-        message="This status will no longer appear in client forms."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous
-        onConfirm={() => deleteMutation.mutate(deleteId)}
-        onCancel={() => setDeleteId(null)}
-      />
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deleteId)}
+          title="Delete Status?"
+          message="This status will no longer appear in client forms."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deleteMutation.mutate(deleteId)}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ─── Payment Modes ────────────────────────────────────────────────────────────
 
-function PaymentModesTab() {
+function PaymentModesTab({ isSuperAdmin }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -593,26 +606,30 @@ function PaymentModesTab() {
                   className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
                   <HiOutlinePencil className="w-4 h-4" />
                 </button>
-                <button type="button" onClick={() => setDeleteId(item._id)}
-                  className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
-                  <HiOutlineTrash className="w-4 h-4" />
-                </button>
+                {isSuperAdmin && (
+                  <button type="button" onClick={() => setDeleteId(item._id)}
+                    className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                    <HiOutlineTrash className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={Boolean(deleteId)}
-        title="Delete Payment Mode?"
-        message="This mode will no longer appear in payment forms."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous
-        onConfirm={() => deleteMutation.mutate(deleteId)}
-        onCancel={() => setDeleteId(null)}
-      />
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deleteId)}
+          title="Delete Payment Mode?"
+          message="This mode will no longer appear in payment forms."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deleteMutation.mutate(deleteId)}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
     </div>
   );
 }
@@ -621,6 +638,8 @@ function PaymentModesTab() {
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState(0);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
 
   return (
     <div className="space-y-5 max-w-4xl mx-auto">
@@ -647,10 +666,10 @@ export default function AdminPage() {
       </div>
 
       <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-2xl p-5 shadow-sm dark:shadow-none">
-        {activeTab === 0 && <ConferencesTab />}
-        {activeTab === 1 && <RolesTab />}
-        {activeTab === 2 && <StatusesTab />}
-        {activeTab === 3 && <PaymentModesTab />}
+        {activeTab === 0 && <ConferencesTab isSuperAdmin={isSuperAdmin} />}
+        {activeTab === 1 && <RolesTab isSuperAdmin={isSuperAdmin} />}
+        {activeTab === 2 && <StatusesTab isSuperAdmin={isSuperAdmin} />}
+        {activeTab === 3 && <PaymentModesTab isSuperAdmin={isSuperAdmin} />}
       </div>
     </div>
   );

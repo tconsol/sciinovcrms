@@ -6,6 +6,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import Dropdown from '../components/Dropdown';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useAuth } from '../context/AuthContext';
 import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi';
 
 const paginationBtnCls = 'px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 rounded-lg disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-white transition';
@@ -116,6 +117,8 @@ function ConversationModal({ conversation: c, onClose, payment, statusesData }) 
 
 export default function Conversations() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -334,10 +337,12 @@ export default function Conversations() {
                               Complete
                             </button>
                           )}
-                          <button type="button" onClick={() => setDeleteId(f._id)}
-                            className="text-[10px] px-2 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 transition font-semibold">
-                            Delete
-                          </button>
+                          {isSuperAdmin && (
+                            <button type="button" onClick={() => setDeleteId(f._id)}
+                              className="text-[10px] px-2 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 transition font-semibold">
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -356,16 +361,18 @@ export default function Conversations() {
         statusesData={statusesData}
       />
 
-      <ConfirmDialog
-        isOpen={Boolean(deleteId)}
-        title="Delete Conversation?"
-        message="This conversation will be permanently removed."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous
-        onConfirm={() => deleteMutation.mutate(deleteId)}
-        onCancel={() => setDeleteId(null)}
-      />
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deleteId)}
+          title="Delete Conversation?"
+          message="This conversation will be permanently removed."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deleteMutation.mutate(deleteId)}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
 
       {pagination.pages > 1 && (
         <div className="flex items-center justify-between">

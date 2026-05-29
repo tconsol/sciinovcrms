@@ -5,6 +5,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import Dropdown from '../components/Dropdown';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useAuth } from '../context/AuthContext';
 import { HiOutlineSearch, HiOutlinePlus, HiOutlineX, HiOutlinePencil, HiOutlineTrash, HiOutlineCheck } from 'react-icons/hi';
 
 
@@ -39,6 +40,8 @@ export default function History() {
   const [searchParams] = useSearchParams();
   const clientParam = searchParams.get('client') || '';
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -652,10 +655,12 @@ export default function History() {
                           className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
                           <HiOutlinePencil className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" onClick={() => setDeletePayId(p._id)}
-                          className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
-                          <HiOutlineTrash className="w-3.5 h-3.5" />
-                        </button>
+                        {isSuperAdmin && (
+                          <button type="button" onClick={() => setDeletePayId(p._id)}
+                            className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                            <HiOutlineTrash className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -666,16 +671,18 @@ export default function History() {
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={Boolean(deletePayId)}
-        title="Delete Payment?"
-        message="This payment record will be permanently removed."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous
-        onConfirm={() => deletePayMutation.mutate(deletePayId)}
-        onCancel={() => setDeletePayId(null)}
-      />
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deletePayId)}
+          title="Delete Payment?"
+          message="This payment record will be permanently removed."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deletePayMutation.mutate(deletePayId)}
+          onCancel={() => setDeletePayId(null)}
+        />
+      )}
 
       {/* Filters */}
       <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-2xl p-4 shadow-sm dark:shadow-none">
