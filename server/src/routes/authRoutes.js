@@ -7,6 +7,7 @@ const axios = require('axios');
 router.post('/signin', authController.signin);
 router.post('/refresh-token', authController.refreshToken);
 router.post('/logout', authMiddleware, authController.logout);
+router.post('/sso-launch', authMiddleware, authController.ssoLaunch);
 
 // Test endpoint - check SciInov connection
 router.get('/test', async (req, res) => {

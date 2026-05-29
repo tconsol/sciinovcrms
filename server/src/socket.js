@@ -16,12 +16,19 @@ const socketAuthMiddleware = (socket, next) => {
   }
 };
 
+const log = (msg) => console.log(`[${new Date().toISOString()}] ${msg}`);
+
 module.exports = {
   setIo: (instance) => {
     io = instance;
     io.use(socketAuthMiddleware);
     io.on('connection', (socket) => {
-      socket.on('disconnect', () => {});
+      const user = socket.user?.userId || 'unknown';
+      log(`Socket connected: ${user} (${socket.id})`);
+
+      socket.on('disconnect', (reason) => {
+        log(`Socket disconnected: ${user} (${socket.id}) — ${reason}`);
+      });
     });
   },
   emit: (event, data) => { if (io) io.emit(event, data || {}); },

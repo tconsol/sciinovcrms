@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { SocketProvider } from '../context/SocketContext';
 import {
   HiOutlineHome,
   HiOutlineUsers,
@@ -33,7 +34,7 @@ const formatRole = (role) =>
     .replace(/\b\w/g, (c) => c.toUpperCase()) || 'Member';
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, credentialsRef } = useAuth();
   const { isDark, toggle } = useTheme();
   const navigate = useNavigate();
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -41,6 +42,10 @@ export default function Layout() {
 
   const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
   const navItems = allNavItems.filter((item) => !item.superAdminOnly || isSuperAdmin);
+
+  const launchSciInov = () => {
+    window.open('https://sciinovdbms.com/', '_blank');
+  };
 
   const handleLogout = async () => {
     setUserMenuOpen(false);
@@ -115,6 +120,7 @@ export default function Layout() {
   );
 
   return (
+    <SocketProvider>
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
       {/* Desktop Sidebar */}
       <aside className={`hidden lg:flex flex-col border-r border-gray-200 dark:border-white/[0.06] transition-all duration-300 shrink-0 ${
@@ -162,6 +168,33 @@ export default function Layout() {
 
             {/* Right: theme toggle + user dropdown */}
             <div className="flex items-center gap-2">
+              {/* Quick Links */}
+              <div className="hidden sm:flex items-center gap-1.5 mr-1">
+                <button
+                  type="button"
+                  onClick={launchSciInov}
+                  title="Open SciInov DBMS (auto-login)"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition"
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  SciInov DBMS
+                </button>
+                <a
+                  href="http://hrms.sciinovdbms.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open HRMS"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition"
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  HRMS
+                </a>
+              </div>
+
               <button
                 type="button"
                 onClick={toggle}
@@ -224,5 +257,6 @@ export default function Layout() {
         </main>
       </div>
     </div>
+    </SocketProvider>
   );
 }

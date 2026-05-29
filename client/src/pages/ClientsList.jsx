@@ -5,7 +5,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import {
   HiOutlinePlus, HiOutlineSearch, HiOutlineTrash, HiOutlinePencil,
-  HiOutlineEye, HiOutlineChat, HiOutlineCheck,
+  HiOutlineEye, HiOutlineCheck, HiOutlineClipboardList,
 } from 'react-icons/hi';
 import Dropdown from '../components/Dropdown';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -440,7 +440,12 @@ export default function ClientsList() {
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                           {client.fullName?.[0]?.toUpperCase()}
                         </div>
-                        <span className="text-sm font-medium text-gray-800 dark:text-slate-200">{client.fullName}</span>
+                        <Link
+                          to={`/clients/${client._id}`}
+                          className="text-sm font-medium text-gray-800 dark:text-slate-200 hover:text-violet-600 dark:hover:text-violet-400 transition"
+                        >
+                          {client.fullName}
+                        </Link>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">{client.email}</td>
@@ -453,17 +458,14 @@ export default function ClientsList() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <Link
-                          to={`/history?client=${encodeURIComponent(client.fullName)}`}
-                          title="View conversation history"
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition"
+                          to={`/clients/${client._id}`}
+                          title="View full history"
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition"
                         >
-                          <HiOutlineChat className="w-3.5 h-3.5" />
-                          Conversations
+                          <HiOutlineClipboardList className="w-3.5 h-3.5" />
+                          History
                         </Link>
-                        <Link to={`/clients/${client._id}`} className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition">
-                          <HiOutlineEye className="w-4 h-4" />
-                        </Link>
-                        <Link to={`/clients/${client._id}/edit`} className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
+                        <Link to={`/clients/${client._id}/edit`} className="p-1.5 text-gray-400 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition" title="Edit">
                           <HiOutlinePencil className="w-4 h-4" />
                         </Link>
                         {isSuperAdmin && (

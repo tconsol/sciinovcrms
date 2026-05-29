@@ -456,22 +456,64 @@ export default function ClientDetails() {
           </form>
         )}
 
-        {/* Payments summary */}
-        {payments.length > 0 && (
-          <div className="mb-5 space-y-2">
-            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2">Payments</p>
-            {payments.map((p) => (
-              <div key={p._id} className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-xl text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">${p.amountPaid.toLocaleString()}</span>
-                  <span className="text-xs text-gray-500 dark:text-slate-500 bg-gray-100 dark:bg-white/[0.06] px-2 py-0.5 rounded-lg">{p.paymentMode}</span>
-                  {p.transactionId && <span className="text-xs text-gray-400 dark:text-slate-600">#{p.transactionId}</span>}
-                </div>
-                <span className="text-xs text-gray-400 dark:text-slate-500">{new Date(p.paymentDate).toLocaleDateString()}</span>
+        {/* Financial summary + Payments */}
+        {payments.length > 0 && (() => {
+          const totalActual = payments.reduce((s, p) => s + (p.actualFee || 0), 0);
+          const totalDiscount = payments.reduce((s, p) => s + (p.discount || 0), 0);
+          const totalBalance = totalActual - totalDiscount - totalPaid;
+          return (
+            <div className="mb-5 space-y-3">
+              {/* Summary strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Actual Fee', value: `$${totalActual.toLocaleString()}`, color: 'text-gray-700 dark:text-slate-200' },
+                  { label: 'Discount', value: `$${totalDiscount.toLocaleString()}`, color: 'text-amber-600 dark:text-amber-400' },
+                  { label: 'Paid', value: `$${totalPaid.toLocaleString()}`, color: 'text-emerald-600 dark:text-emerald-400' },
+                  { label: 'Balance Due', value: `$${totalBalance.toLocaleString()}`, color: totalBalance > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="p-3 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.06] rounded-xl">
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mb-0.5">{label}</p>
+                    <p className={`text-sm font-bold ${color}`}>{value}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Payment records */}
+              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Payment Records</p>
+              {payments.map((p, i) => (
+                <div key={p._id} className="p-3 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-xl">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">#{i + 1}</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">${p.amountPaid.toLocaleString()} paid</span>
+                      {p.actualFee > 0 && (
+                        <span className="text-xs text-gray-500 dark:text-slate-400">of ${p.actualFee.toLocaleString()}</span>
+                      )}
+                      {p.discount > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">-${p.discount.toLocaleString()} disc.</span>
+                      )}
+                      {p.paymentMode && (
+                        <span className="text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-slate-400 px-2 py-0.5 rounded-lg">{p.paymentMode}</span>
+                      )}
+                      {p.conference && (
+                        <span className="text-xs px-2 py-0.5 rounded-lg bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">{p.conference}</span>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs text-gray-400 dark:text-slate-500">{new Date(p.paymentDate).toLocaleDateString()}</p>
+                      {p.transactionId && <p className="text-xs text-gray-400 dark:text-slate-600 mt-0.5">#{p.transactionId}</p>}
+                    </div>
+                  </div>
+                  {p.actualFee > 0 && p.discount >= 0 && (
+                    <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5">
+                      Balance: ${(p.actualFee - p.discount - p.amountPaid).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Conversation timeline */}
         {conversations.length === 0 ? (

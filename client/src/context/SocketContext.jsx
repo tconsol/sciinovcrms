@@ -13,11 +13,16 @@ export function SocketProvider({ children }) {
   const socketRef = useRef(null);
 
   useEffect(() => {
+    // Guard against React StrictMode double-invoke
+    if (socketRef.current) return;
+
     const token = localStorage.getItem('accessToken');
 
     const socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
       auth: { token },
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
     });
     socketRef.current = socket;
 
@@ -47,7 +52,10 @@ export function SocketProvider({ children }) {
       queryClient.invalidateQueries({ queryKey: ['admin'] });
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
   }, [queryClient]);
 
   return (

@@ -193,6 +193,47 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
+exports.ssoLaunch = async (req, res) => {
+  try {
+    const { userId, password } = req.body || {};
+    if (!userId || !password) {
+      return res.status(400).json({ message: 'Credentials required' });
+    }
+
+    // Re-auth against SciInov to get fresh token
+    const sciRes = await axios.post(`${config.sciinovBaseUrl}/api/auth/signin`, { userId, password }, { timeout: 10000 });
+    const token = sciRes.data.token || sciRes.data.accessToken || sciRes.data.jwt;
+    if (!token) return res.status(500).json({ message: 'No token from SciInov' });
+
+    const roles = sciRes.data.roles || [];
+    const userData = JSON.stringify({
+      id: sciRes.data.userId || sciRes.data.id || userId,
+      username: sciRes.data.username || userId,
+      email: sciRes.data.email || '',
+      roles,
+    });
+    const refreshToken = sciRes.data.refreshToken || '';
+
+    const redirectUrl = roles.includes('ROLE_SUPER_ADMIN')
+      ? 'https://sciinovdbms.com/super-admin/dashboard'
+      : 'https://sciinovdbms.com/admin/dashboard';
+
+    // Pass token via URL — sciinovdbms.com frontend must read ?ssoToken and store to its own localStorage
+    const ssoUrl = `${redirectUrl}?ssoToken=${encodeURIComponent(token)}&ssoUser=${encodeURIComponent(userData)}`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Signing in...</title></head><body>
+<p style="font-family:sans-serif;padding:20px">Signing in to SciInov DBMS...</p>
+<script>
+window.location.replace(${JSON.stringify(ssoUrl)});
+</script>
+</body></html>`);
+  } catch (error) {
+    console.error('[SSO Launch Error]', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ message: 'SSO launch failed' });
+  }
+};
+
 exports.logout = async (req, res) => {
   try {
     console.log('[Auth] Logging out user:', req.user?.userId);
