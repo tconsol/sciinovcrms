@@ -24,6 +24,12 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" />;
 }
 
+function SuperAdminRoute({ children }) {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
+  return isSuperAdmin ? children : <Navigate to="/clients" replace />;
+}
+
 export default function App() {
   const { user } = useAuth();
 
@@ -41,7 +47,7 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<SuperAdminRoute><Dashboard /></SuperAdminRoute>} />
         <Route path="clients" element={<ClientsList />} />
         <Route path="clients/new" element={<ClientForm />} />
         <Route path="clients/:id/edit" element={<ClientForm />} />
@@ -49,7 +55,7 @@ export default function App() {
         <Route path="payments" element={<Payments />} />
         <Route path="conversations" element={<FollowUps />} />
         <Route path="history" element={<History />} />
-        <Route path="activity-logs" element={<ActivityLogs />} />
+        <Route path="activity-logs" element={<SuperAdminRoute><ActivityLogs /></SuperAdminRoute>} />
         <Route path="admin" element={<AdminPage />} />
       </Route>
     </Routes>

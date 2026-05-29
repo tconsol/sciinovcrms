@@ -17,11 +17,11 @@ import {
   HiOutlineCog,
 } from 'react-icons/hi';
 
-const navItems = [
-  { to: '/', icon: HiOutlineHome, label: 'Dashboard', end: true },
+const allNavItems = [
+  { to: '/', icon: HiOutlineHome, label: 'Dashboard', end: true, superAdminOnly: true },
   { to: '/clients', icon: HiOutlineUsers, label: 'Clients' },
   { to: '/conversations', icon: HiOutlineClock, label: 'Conversations' },
-  { to: '/activity-logs', icon: HiOutlineClipboardList, label: 'Activity Logs' },
+  { to: '/activity-logs', icon: HiOutlineClipboardList, label: 'Activity Logs', superAdminOnly: true },
   { to: '/admin', icon: HiOutlineCog, label: 'Admin Config' },
 ];
 
@@ -38,6 +38,9 @@ export default function Layout() {
   const navigate = useNavigate();
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
+  const navItems = allNavItems.filter((item) => !item.superAdminOnly || isSuperAdmin);
 
   const handleLogout = async () => {
     setUserMenuOpen(false);

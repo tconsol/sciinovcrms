@@ -60,7 +60,7 @@ const clientSchema = new mongoose.Schema(
   }
 );
 
-clientSchema.index({ email: 1 });
+clientSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { isDeleted: false } });
 clientSchema.index({ status: 1 });
 clientSchema.index({ createdBy: 1 });
 clientSchema.index({ isDeleted: 1 });

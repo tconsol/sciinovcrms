@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Dropdown from '../components/Dropdown';
 import MultiSelect from '../components/MultiSelect';
 import ConfirmDialog from '../components/ConfirmDialog';
+import CountrySelect from '../components/CountrySelect';
 import { HiOutlineArrowLeft } from 'react-icons/hi';
 
 const inputCls = 'w-full px-4 py-2.5 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
@@ -194,7 +195,10 @@ export default function ClientForm() {
           </div>
           <div>
             <label className={labelCls}>Country</label>
-            <input name="country" value={form.country} onChange={handleChange} placeholder="India" className={inputCls} />
+            <CountrySelect
+              value={form.country}
+              onChange={(val) => setForm((prev) => ({ ...prev, country: val }))}
+            />
           </div>
           <div>
             <label className={labelCls}>Role *</label>

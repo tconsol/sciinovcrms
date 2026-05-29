@@ -4,8 +4,15 @@ const socket = require('../socket');
 
 exports.createClient = async (req, res) => {
   try {
+    const normalizedEmail = (req.body.email || '').trim().toLowerCase();
+    const existing = await Client.findOne({ email: normalizedEmail, isDeleted: false });
+    if (existing) {
+      return res.status(409).json({ message: `A client with email "${normalizedEmail}" already exists` });
+    }
+
     const clientData = {
       ...req.body,
+      email: normalizedEmail,
       createdBy: req.user.userId,
     };
 
@@ -104,6 +111,14 @@ exports.getClientById = async (req, res) => {
 exports.updateClient = async (req, res) => {
   try {
     const updateData = { ...req.body };
+
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      const duplicate = await Client.findOne({ email: updateData.email, isDeleted: false, _id: { $ne: req.params.id } });
+      if (duplicate) {
+        return res.status(409).json({ message: `A client with email "${updateData.email}" already exists` });
+      }
+    }
 
     if (req.file) {
       updateData.profileImage = `/uploads/${req.file.filename}`;
