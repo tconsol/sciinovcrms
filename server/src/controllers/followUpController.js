@@ -88,6 +88,12 @@ exports.getAllFollowUps = async (req, res) => {
 
 exports.updateFollowUp = async (req, res) => {
   try {
+    const existing = await FollowUp.findById(req.params.id).select('status');
+    if (req.body.status === 'COMPLETED' && existing?.status !== 'COMPLETED') {
+      req.body.completedBy = req.user.userId;
+      req.body.completedAt = new Date();
+    }
+
     const followUp = await FollowUp.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,

@@ -105,7 +105,22 @@ function ConversationModal({ conversation: c, onClose, payment, statusesData }) 
             </div>
           )}
 
-          <p className="text-xs text-gray-400 dark:text-slate-500">Created {new Date(c.createdAt).toLocaleString()}</p>
+          <div className="flex flex-wrap gap-4 text-xs text-gray-400 dark:text-slate-500">
+            <span>Created {new Date(c.createdAt).toLocaleString()}</span>
+            {c.createdBy && (
+              <span className="flex items-center gap-1.5">
+                <span className="text-gray-400 dark:text-slate-500">Created by</span>
+                <span className="created-by-pill">{c.createdBy}</span>
+              </span>
+            )}
+            {c.completedBy && (
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Completed by <strong>{c.completedBy}</strong>
+                {c.completedAt && <> on {new Date(c.completedAt).toLocaleDateString()}</>}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>,
@@ -267,7 +282,7 @@ export default function Conversations() {
             <table className="min-w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-transparent">
-                  {['Client', 'Date', 'Conference', 'Topic', 'Status', 'Payment', 'Conv Status', 'Actions'].map((h) => (
+                  {['Client', 'Date', 'Conference', 'Topic', 'Status', 'Payment', 'Conv Status', 'Created By', 'Actions'].map((h) => (
                     <th key={h} className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -292,7 +307,7 @@ export default function Conversations() {
                       </td>
                       <td className="px-3 py-2.5 text-xs whitespace-nowrap">
                         <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-slate-300'}>
-                          {new Date(f.followUpDate).toLocaleString()}
+                          {new Date(f.followUpDate).toLocaleDateString()}
                         </span>
                         {isOverdue && <span className="ml-1.5 text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/10 px-1 py-0.5 rounded">OD</span>}
                       </td>
@@ -324,6 +339,14 @@ export default function Conversations() {
                             ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20'
                             : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
                         }`}>{f.status}</span>
+                        {f.completedBy && (
+                          <p className="text-[9px] text-gray-400 dark:text-slate-500 mt-0.5">✓ {f.completedBy}</p>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        {f.createdBy
+                          ? <span className="created-by-pill">{f.createdBy}</span>
+                          : <span className="text-xs text-gray-300 dark:text-slate-600">—</span>}
                       </td>
                       <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1.5">

@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
-const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const { Server } = require('socket.io');
 
@@ -63,14 +62,6 @@ const io = new Server(httpServer, {
   },
 });
 socketManager.setIo(io);
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  message: { message: 'Too many requests, please try again later.' },
-});
-app.use('/api/', limiter);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));

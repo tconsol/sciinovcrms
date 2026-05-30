@@ -72,9 +72,22 @@ function ConferenceTimeline({ conferenceName, conversations, onMarkComplete }) {
                           <span className="text-xs font-semibold text-red-600 dark:text-red-400">OVERDUE</span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 dark:text-slate-500">
-                        {new Date(c.followUpDate).toLocaleString()}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-3 mt-0.5">
+                        <p className="text-xs text-gray-400 dark:text-slate-500">
+                          {new Date(c.followUpDate).toLocaleDateString()}
+                        </p>
+                        {c.createdBy && (
+                          <span className="flex items-center gap-1">
+                            <span className="text-[10px] text-gray-400 dark:text-slate-500">Created by</span>
+                            <span className="created-by-pill">{c.createdBy}</span>
+                          </span>
+                        )}
+                        {c.completedBy && (
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                            ✓ completed by <strong>{c.completedBy}</strong>
+                          </span>
+                        )}
+                      </div>
                       {c.notes && (
                         <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 italic">"{c.notes}"</p>
                       )}
@@ -304,6 +317,12 @@ export default function ClientDetails() {
               </div>
             </div>
           )}
+          {client.notes && (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <p className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Notes</p>
+              <p className="text-sm text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.06] rounded-xl px-4 py-3 leading-relaxed whitespace-pre-wrap">{client.notes}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -340,10 +359,10 @@ export default function ClientDetails() {
             <h4 className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider">New Conversation</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Date & Time *</label>
-                <input type="datetime-local" value={convForm.followUpDate}
+                <label className={labelCls}>Date *</label>
+                <input type="date" value={convForm.followUpDate}
                   onChange={(e) => setConvForm((f) => ({ ...f, followUpDate: e.target.value }))}
-                  required className={`${inputCls} dark:[color-scheme:dark]`} />
+                  required className={`${inputCls} relative dark:[color-scheme:dark]`} />
               </div>
               <div>
                 <label className={labelCls}>Conference</label>

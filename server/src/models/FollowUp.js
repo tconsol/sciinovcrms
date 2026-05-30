@@ -36,6 +36,12 @@ const followUpSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    completedBy: {
+      type: String,
+    },
+    completedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

@@ -145,10 +145,10 @@ function ClientConversationsPanel({ client }) {
           <p className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wider">New Conversation</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Date & Time *</label>
-              <input type="datetime-local" value={convForm.followUpDate}
+              <label className={labelCls}>Date *</label>
+              <input type="date" value={convForm.followUpDate}
                 onChange={(e) => setConvForm((f) => ({ ...f, followUpDate: e.target.value }))}
-                required className={`${inputCls} dark:[color-scheme:dark]`} />
+                required className={`${inputCls} relative dark:[color-scheme:dark]`} />
             </div>
             <div>
               <label className={labelCls}>Conference</label>

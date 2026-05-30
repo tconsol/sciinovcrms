@@ -46,6 +46,10 @@ const clientSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    notes: {
+      type: String,
+      trim: true,
+    },
     createdBy: {
       type: String,
       required: true,

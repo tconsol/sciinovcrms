@@ -24,7 +24,7 @@ export default function ClientForm() {
 
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', organization: '', country: '',
-    role: '', topics: [], status: '', conferenceNames: [],
+    role: '', topics: [], status: '', conferenceNames: [], notes: '',
   });
 
   const [paymentForm, setPaymentForm] = useState({
@@ -80,6 +80,7 @@ export default function ClientForm() {
         topics: Array.isArray(clientData.topics) ? clientData.topics : (clientData.topic ? [clientData.topic] : []),
         status: clientData.status || '',
         conferenceNames: Array.isArray(clientData.conferenceNames) ? clientData.conferenceNames : (clientData.conferenceName ? [clientData.conferenceName] : []),
+        notes: clientData.notes || '',
       });
     }
   }, [clientData]);
@@ -281,6 +282,18 @@ export default function ClientForm() {
               placeholder="Select Topics"
             />
           </div>
+        </div>
+
+        <div>
+          <label className={labelCls}>Notes</label>
+          <textarea
+            name="notes"
+            value={form.notes}
+            onChange={handleChange}
+            placeholder="Any notes about this client..."
+            rows={3}
+            className={`${inputCls} resize-none`}
+          />
         </div>
 
         <div>

@@ -316,12 +316,12 @@ export default function History() {
           </h3>
           <form onSubmit={handleConvSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className={labelCls}>Date & Time *</label>
+              <label className={labelCls}>Date *</label>
               <input
-                type="datetime-local"
+                type="date"
                 value={convForm.followUpDate}
                 onChange={(e) => setConvForm((f) => ({ ...f, followUpDate: e.target.value }))}
-                className={inputCls}
+                className={`${inputCls} relative dark:[color-scheme:dark]`}
                 required
               />
             </div>
