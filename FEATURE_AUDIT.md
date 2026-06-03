@@ -1,4 +1,4 @@
-# SciInov CRM - Feature Audit Report
+# sciinov CRM - Feature Audit Report
 
 ## Project Status: ✅ PRODUCTION-READY
 
@@ -9,7 +9,7 @@
 
 ## 1. AUTHENTICATION (✅ COMPLETE)
 
-### SciInov Integration
+### sciinov Integration
 - ✅ POST `/api/auth/signin` - Login with userId + password
 - ✅ POST `/api/auth/refresh-token` - Token refresh mechanism
 - ✅ POST `/api/auth/logout` - Logout functionality
@@ -198,7 +198,7 @@
 
 ---
 
-## 4. SCIINOV API INTEGRATION (✅ COMPLETE)
+## 4. sciinov API INTEGRATION (✅ COMPLETE)
 
 ### Authentication APIs
 - ✅ POST `/api/auth/signin` - Implemented with token mapping
@@ -327,7 +327,7 @@
 ### Dashboard Routes
 - ✅ GET `/api/dashboard` - Dashboard data
 
-### SciInov Proxy Routes
+### sciinov Proxy Routes
 - ✅ GET `/api/sciinov/conferences` - Conference list
 - ✅ GET `/api/sciinov/export/excel` - Excel export
 - ✅ GET `/api/sciinov/export/pdf` - PDF export
@@ -422,7 +422,7 @@
 - ✅ Express error middleware
 - ✅ Validation error messages
 - ✅ Database error handling
-- ✅ SciInov API error handling
+- ✅ sciinov API error handling
 - ✅ Timeout detection
 - ✅ Status code mapping
 
@@ -450,7 +450,7 @@
 ## 13. DEVELOPMENT PHASES (✅ ALL COMPLETE)
 
 ### Phase 1: Foundational (✅ COMPLETE)
-- ✅ Auth integration with SciInov
+- ✅ Auth integration with sciinov
 - ✅ Client module (CRUD)
 - ✅ Payment module
 - ✅ Follow-ups module
@@ -483,7 +483,7 @@
 | UI/UX | ✅ Modern | 100% responsive |
 | Responsiveness | ✅ Complete | All devices |
 | Error Handling | ✅ Complete | Frontend + Backend |
-| SciInov Integration | ✅ Complete | All endpoints |
+| sciinov Integration | ✅ Complete | All endpoints |
 
 ---
 

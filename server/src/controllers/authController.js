@@ -14,7 +14,17 @@ exports.signin = async (req, res) => {
       });
     }
 
+    // Validate config
+    if (!config.sciinovBaseUrl) {
+      console.error('[Auth] sciinov_BASE_URL not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Server configuration error: sciinov Base URL not set',
+      });
+    }
+
     console.log('[Auth] Signing in user:', userId);
+    console.log('[Auth] Using sciinov URL:', config.sciinovBaseUrl);
 
     const response = await axios.post(`${config.sciinovBaseUrl}/api/auth/signin`, {
       userId,
@@ -24,7 +34,7 @@ exports.signin = async (req, res) => {
     });
 
     console.log('[Auth] Login successful for:', userId);
-    console.log('[Auth] SciInov Response:', {
+    console.log('[Auth] sciinov Response:', {
       hasToken: !!response.data.token,
       hasAccessToken: !!response.data.accessToken,
       hasJwt: !!response.data.jwt,
@@ -32,8 +42,8 @@ exports.signin = async (req, res) => {
       token: response.data.token ? response.data.token.substring(0, 50) + '...' : 'undefined',
     });
     
-    // Map SciInov response to our standard format
-    // SciInov uses 'token' instead of 'accessToken'
+    // Map sciinov response to our standard format
+    // sciinov uses 'token' instead of 'accessToken'
     const tokenValue = response.data.token || response.data.accessToken || response.data.jwt;
     
     const authResponse = {
@@ -53,14 +63,18 @@ exports.signin = async (req, res) => {
 
     res.json(authResponse);
   } catch (error) {
-    console.error('[Auth Error]', {
+    console.error('[Auth Error Details]', {
       message: error.message,
+      code: error.code,
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
       url: error.config?.url,
-      timeout: error.code === 'ECONNABORTED',
+      sciinoveBaseUrl: config.sciinovBaseUrl,
     });
+
+    // Log full error for debugging
+    console.error('[Auth Full Error]', error);
 
     // Determine specific error type
     let message = 'Authentication failed';
@@ -73,14 +87,15 @@ exports.signin = async (req, res) => {
       status: errorStatus,
       rawErrorMsg,
       errorMsg,
+      hasResponse: !!error.response,
     });
 
     // Priority 1: Check connection errors
     if (error.code === 'ECONNABORTED') {
-      message = 'Request timeout. SciInov DBMS may be unreachable.';
+      message = 'Request timeout. sciinov DBMS may be unreachable.';
     } 
     else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-      message = 'Connection error. SciInov DBMS may be unreachable.';
+      message = 'Connection error. sciinov DBMS may be unreachable.';
     }
     // Priority 2: Check error message content first (most reliable for distinguishing)
     else if (
@@ -178,11 +193,52 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
+exports.ssoLaunch = async (req, res) => {
+  try {
+    const { userId, password } = req.body || {};
+    if (!userId || !password) {
+      return res.status(400).json({ message: 'Credentials required' });
+    }
+
+    // Re-auth against sciinov to get fresh token
+    const sciRes = await axios.post(`${config.sciinovBaseUrl}/api/auth/signin`, { userId, password }, { timeout: 10000 });
+    const token = sciRes.data.token || sciRes.data.accessToken || sciRes.data.jwt;
+    if (!token) return res.status(500).json({ message: 'No token from sciinov' });
+
+    const roles = sciRes.data.roles || [];
+    const userData = JSON.stringify({
+      id: sciRes.data.userId || sciRes.data.id || userId,
+      username: sciRes.data.username || userId,
+      email: sciRes.data.email || '',
+      roles,
+    });
+    const refreshToken = sciRes.data.refreshToken || '';
+
+    const redirectUrl = roles.includes('ROLE_SUPER_ADMIN')
+      ? 'https://sciinovdbms.com/super-admin/dashboard'
+      : 'https://sciinovdbms.com/admin/dashboard';
+
+    // Pass token via URL — sciinovdbms.com frontend must read ?ssoToken and store to its own localStorage
+    const ssoUrl = `${redirectUrl}?ssoToken=${encodeURIComponent(token)}&ssoUser=${encodeURIComponent(userData)}`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Signing in...</title></head><body>
+<p style="font-family:sans-serif;padding:20px">Signing in to sciinov DBMS...</p>
+<script>
+window.location.replace(${JSON.stringify(ssoUrl)});
+</script>
+</body></html>`);
+  } catch (error) {
+    console.error('[SSO Launch Error]', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ message: 'SSO launch failed' });
+  }
+};
+
 exports.logout = async (req, res) => {
   try {
     console.log('[Auth] Logging out user:', req.user?.userId);
 
-    // Send logout request to SciInov (optional - not all systems support it)
+    // Send logout request to sciinov (optional - not all systems support it)
     try {
       await axios.post(
         `${config.sciinovBaseUrl}/api/auth/logout`,
@@ -193,7 +249,7 @@ exports.logout = async (req, res) => {
         }
       );
     } catch (sciinError) {
-      console.warn('[Logout] SciInov logout failed (non-critical):', sciinError.message);
+      console.warn('[Logout] sciinov logout failed (non-critical):', sciinError.message);
       // Don't throw - logout is still successful on our end
     }
 

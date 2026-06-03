@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const credentialsRef = useRef(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -20,14 +21,8 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await api.post('/auth/signin', { userId, password });
 
-      console.log('[Auth] Response from backend:', data);
-
-      // Handle both direct token and accessToken field
       const token = data.accessToken || data.token || data.jwt;
-      
-      if (!token) {
-        throw new Error(`No token in response. Got: ${JSON.stringify(Object.keys(data))}`);
-      }
+      if (!token) throw new Error(`No token in response. Got: ${JSON.stringify(Object.keys(data))}`);
 
       const userData = {
         id: data.userId || data.id,
@@ -39,6 +34,8 @@ export function AuthProvider({ children }) {
       localStorage.setItem('accessToken', token);
       localStorage.setItem('refreshToken', data.refreshToken || '');
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('ssoCredentials', JSON.stringify({ userId, password }));
+      credentialsRef.current = { userId, password };
       setUser(userData);
 
       return userData;
@@ -52,17 +49,19 @@ export function AuthProvider({ children }) {
     try {
       await api.post('/auth/logout');
     } catch {
-      // Ignore logout errors
+      // ignore
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
+      localStorage.removeItem('ssoCredentials');
+      credentialsRef.current = null;
       setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, credentialsRef }}>
       {children}
     </AuthContext.Provider>
   );

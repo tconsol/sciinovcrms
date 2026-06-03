@@ -1,6 +1,7 @@
 const Payment = require('../models/Payment');
 const Client = require('../models/Client');
 const logActivity = require('../utils/logActivity');
+const socket = require('../socket');
 
 exports.addPayment = async (req, res) => {
   try {
@@ -9,12 +10,6 @@ exports.addPayment = async (req, res) => {
     const client = await Client.findOne({ _id: clientId, isDeleted: false });
     if (!client) {
       return res.status(404).json({ message: 'Client not found' });
-    }
-
-    if (client.status !== 'PAID') {
-      return res.status(400).json({
-        message: 'Payment can only be added when client status is PAID',
-      });
     }
 
     const payment = await Payment.create({
@@ -30,6 +25,7 @@ exports.addPayment = async (req, res) => {
       metadata: { amountPaid: payment.amountPaid, paymentMode: payment.paymentMode },
     });
 
+    socket.emit('payments:changed');
     res.status(201).json(payment);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -91,7 +87,27 @@ exports.updatePayment = async (req, res) => {
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
+    socket.emit('payments:changed');
     res.json(payment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.deletePayment = async (req, res) => {
+  try {
+    const payment = await Payment.findByIdAndDelete(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    await logActivity({
+      userId: req.user.userId,
+      actionType: 'PAYMENT_DELETED',
+      description: `Payment of ${payment.amountPaid} deleted`,
+      clientId: payment.clientId,
+    });
+    socket.emit('payments:changed');
+    res.json({ message: 'Payment deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

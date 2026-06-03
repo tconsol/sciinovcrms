@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900;
+/* Animated created-by pill */
+@keyframes pill-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.created-by-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, #7c3aed, #6366f1, #a855f7, #7c3aed);
+  background-size: 200% auto;
+  color: #fff;
+  animation: pill-shimmer 2.5s linear infinite;
+  box-shadow: 0 0 8px rgba(139,92,246,0.4);
+}
+
+/* Base backgrounds */
+html { background-color: #f9fafb; }
+html.dark { background-color: #020617; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
+html.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
+html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+/* Date picker icon — violet, right-aligned */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  filter: invert(35%) sepia(90%) saturate(600%) hue-rotate(235deg) brightness(85%);
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+}
+html.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(65%) sepia(50%) saturate(500%) hue-rotate(230deg) brightness(120%);
 }

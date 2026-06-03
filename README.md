@@ -1,6 +1,6 @@
-# SciInov CRM System
+# sciinov CRM System
 
-Production-grade CRM system built with MERN stack, integrated with SciInov DBMS for authentication and conference data.
+Production-grade CRM system built with MERN stack, integrated with sciinov DBMS for authentication and conference data.
 
 ## Architecture
 
@@ -8,12 +8,12 @@ Production-grade CRM system built with MERN stack, integrated with SciInov DBMS 
 React Frontend (Vite + Tailwind CSS)
   → Node.js/Express Backend (CRM Layer)
     → MongoDB (CRM Database)
-    → SciInov DBMS API (External Auth + Conferences)
+    → sciinov DBMS API (External Auth + Conferences)
 ```
 
 ## Features
 
-- **Authentication**: SciInov DBMS JWT integration (no custom auth)
+- **Authentication**: sciinov DBMS JWT integration (no custom auth)
 - **Client Management**: CRUD with soft delete, roles (Speaker/Attendee/Sponsor)
 - **Status Tracking**: REGISTERED → PAID → DECLINED → NEXT_EDITION_INTEREST
 - **Payment Module**: Multi-payment support, partial payments, payment modes
@@ -22,7 +22,7 @@ React Frontend (Vite + Tailwind CSS)
 - **Activity Logs**: Full audit trail of all CRM operations
 - **Search & Filter**: By name, email, status, role, conference, date
 - **File Upload**: Profile image uploads
-- **SciInov Integration**: Conferences, export (Excel/PDF)
+- **sciinov Integration**: Conferences, export (Excel/PDF)
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ React Frontend (Vite + Tailwind CSS)
 
 - Node.js 18+
 - MongoDB running locally (or Atlas URI)
-- SciInov DBMS account
+- sciinov DBMS account
 
 ### Backend
 
@@ -53,7 +53,7 @@ npm run dev           # Runs on http://localhost:5173
 ```
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/sciinovcrms
-SCIINOV_BASE_URL=https://sciinovdbms-64307221061.asia-south1.run.app
+sciinov_BASE_URL=https://sciinovdbms-64307221061.asia-south1.run.app
 JWT_SECRET=your-jwt-secret
 UPLOAD_DIR=uploads
 NODE_ENV=development
@@ -61,7 +61,7 @@ NODE_ENV=development
 
 ## API Endpoints
 
-### Auth (proxy to SciInov)
+### Auth (proxy to sciinov)
 - `POST /api/auth/signin` - Login
 - `POST /api/auth/refresh-token` - Refresh JWT
 - `POST /api/auth/logout` - Logout
@@ -90,7 +90,7 @@ NODE_ENV=development
 - `GET /api/dashboard` - Dashboard metrics
 - `GET /api/activity-logs` - Activity logs
 
-### SciInov Proxy
+### sciinov Proxy
 - `GET /api/sciinov/conferences` - Conference list
 - `GET /api/sciinov/export/excel` - Excel export
 - `GET /api/sciinov/export/pdf` - PDF export

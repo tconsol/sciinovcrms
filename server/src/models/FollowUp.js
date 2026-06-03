@@ -15,6 +15,18 @@ const followUpSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    conference: {
+      type: String,
+      trim: true,
+    },
+    topic: {
+      type: String,
+      trim: true,
+    },
+    outcome: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
       enum: ['PENDING', 'COMPLETED'],
@@ -23,6 +35,12 @@ const followUpSchema = new mongoose.Schema(
     createdBy: {
       type: String,
       required: true,
+    },
+    completedBy: {
+      type: String,
+    },
+    completedAt: {
+      type: Date,
     },
   },
   {

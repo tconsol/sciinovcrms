@@ -1,10 +1,18 @@
 const Client = require('../models/Client');
 const logActivity = require('../utils/logActivity');
+const socket = require('../socket');
 
 exports.createClient = async (req, res) => {
   try {
+    const normalizedEmail = (req.body.email || '').trim().toLowerCase();
+    const existing = await Client.findOne({ email: normalizedEmail, isDeleted: false });
+    if (existing) {
+      return res.status(409).json({ message: `A client with email "${normalizedEmail}" already exists` });
+    }
+
     const clientData = {
       ...req.body,
+      email: normalizedEmail,
       createdBy: req.user.userId,
     };
 
@@ -21,6 +29,7 @@ exports.createClient = async (req, res) => {
       clientId: client._id,
     });
 
+    socket.emit('clients:changed');
     res.status(201).json(client);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -35,6 +44,8 @@ exports.getClients = async (req, res) => {
       search,
       status,
       role,
+      topic,
+      conference,
       conferenceId,
       startDate,
       endDate,
@@ -53,6 +64,8 @@ exports.getClients = async (req, res) => {
 
     if (status) filter.status = status;
     if (role) filter.role = role;
+    if (topic) filter.topics = topic;
+    if (conference) filter.conferenceNames = conference;
     if (conferenceId) filter.conferenceId = conferenceId;
 
     if (startDate || endDate) {
@@ -99,6 +112,14 @@ exports.updateClient = async (req, res) => {
   try {
     const updateData = { ...req.body };
 
+    if (updateData.email) {
+      updateData.email = updateData.email.trim().toLowerCase();
+      const duplicate = await Client.findOne({ email: updateData.email, isDeleted: false, _id: { $ne: req.params.id } });
+      if (duplicate) {
+        return res.status(409).json({ message: `A client with email "${updateData.email}" already exists` });
+      }
+    }
+
     if (req.file) {
       updateData.profileImage = `/uploads/${req.file.filename}`;
     }
@@ -128,6 +149,7 @@ exports.updateClient = async (req, res) => {
         : undefined,
     });
 
+    socket.emit('clients:changed');
     res.json(client);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -153,6 +175,7 @@ exports.deleteClient = async (req, res) => {
       clientId: client._id,
     });
 
+    socket.emit('clients:changed');
     res.json({ message: 'Client deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -3,11 +3,15 @@ const config = require('./index');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(config.mongoUri);
-    console.log('MongoDB connected successfully');
+    await mongoose.connect(config.mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+    console.log('[' + new Date().toISOString() + '] MongoDB connected successfully');
+    return true;
   } catch (error) {
-    console.error('MongoDB connection error:', error.message);
-    process.exit(1);
+    console.error('[' + new Date().toISOString() + '] MongoDB connection error:', error.message);
+    throw error;
   }
 };
 

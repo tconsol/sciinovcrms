@@ -9,6 +9,8 @@ import ClientDetails from './pages/ClientDetails';
 import Payments from './pages/Payments';
 import FollowUps from './pages/FollowUps';
 import ActivityLogs from './pages/ActivityLogs';
+import AdminPage from './pages/AdminPage';
+import History from './pages/History';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -20,6 +22,12 @@ function ProtectedRoute({ children }) {
     );
   }
   return user ? children : <Navigate to="/login" />;
+}
+
+function SuperAdminRoute({ children }) {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
+  return isSuperAdmin ? children : <Navigate to="/clients" replace />;
 }
 
 export default function App() {
@@ -39,14 +47,16 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<SuperAdminRoute><Dashboard /></SuperAdminRoute>} />
         <Route path="clients" element={<ClientsList />} />
         <Route path="clients/new" element={<ClientForm />} />
         <Route path="clients/:id/edit" element={<ClientForm />} />
         <Route path="clients/:id" element={<ClientDetails />} />
         <Route path="payments" element={<Payments />} />
-        <Route path="follow-ups" element={<FollowUps />} />
-        <Route path="activity-logs" element={<ActivityLogs />} />
+        <Route path="conversations" element={<FollowUps />} />
+        <Route path="history" element={<History />} />
+        <Route path="activity-logs" element={<SuperAdminRoute><ActivityLogs /></SuperAdminRoute>} />
+        <Route path="admin" element={<SuperAdminRoute><AdminPage /></SuperAdminRoute>} />
       </Route>
     </Routes>
   );

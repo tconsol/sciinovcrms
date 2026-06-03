@@ -1,113 +1,112 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import api from '../services/api';
-import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Dropdown from '../components/Dropdown';
 
-const ACTION_COLORS = {
-  CLIENT_CREATED: 'bg-green-100 text-green-700',
-  CLIENT_UPDATED: 'bg-blue-100 text-blue-700',
-  CLIENT_DELETED: 'bg-red-100 text-red-700',
-  STATUS_CHANGED: 'bg-purple-100 text-purple-700',
-  PAYMENT_ADDED: 'bg-emerald-100 text-emerald-700',
-  FOLLOWUP_CREATED: 'bg-amber-100 text-amber-700',
-  FOLLOWUP_UPDATED: 'bg-amber-100 text-amber-700',
-  FOLLOWUP_COMPLETED: 'bg-green-100 text-green-700',
+const ACTION_BADGE = {
+  CLIENT_CREATED: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+  CLIENT_UPDATED: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
+  CLIENT_DELETED: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20',
+  STATUS_CHANGED: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20',
+  PAYMENT_ADDED: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
+  FOLLOWUP_CREATED: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+  FOLLOWUP_UPDATED: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+  FOLLOWUP_COMPLETED: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20',
 };
+
+const ACTION_DOT = {
+  CLIENT_CREATED: 'bg-emerald-500',
+  CLIENT_UPDATED: 'bg-blue-500',
+  CLIENT_DELETED: 'bg-red-500',
+  STATUS_CHANGED: 'bg-purple-500',
+  PAYMENT_ADDED: 'bg-emerald-500',
+  FOLLOWUP_CREATED: 'bg-amber-500',
+  FOLLOWUP_UPDATED: 'bg-amber-500',
+  FOLLOWUP_COMPLETED: 'bg-emerald-500',
+};
+
+const paginationBtnCls = 'px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 rounded-lg disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-white transition';
 
 export default function ActivityLogs() {
   const { user } = useAuth();
-  const [logs, setLogs] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState('');
 
-  const actionOptions = [
-    { value: 'CLIENT_CREATED', label: 'Client Created' },
-    { value: 'CLIENT_UPDATED', label: 'Client Updated' },
-    { value: 'CLIENT_DELETED', label: 'Client Deleted' },
-    { value: 'STATUS_CHANGED', label: 'Status Changed' },
-    { value: 'PAYMENT_ADDED', label: 'Payment Added' },
-    { value: 'FOLLOWUP_CREATED', label: 'Follow-up Created' },
-    { value: 'FOLLOWUP_COMPLETED', label: 'Follow-up Completed' },
-  ];
-
-  // Check if user is super_admin
   const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN') || user?.roles?.includes('super_admin');
   const isAdmin = user?.roles?.includes('ROLE_ADMIN') || user?.roles?.includes('admin');
 
-  const fetchLogs = useCallback(async (page = 1) => {
-    setLoading(true);
-    try {
+  const { data, isLoading } = useQuery({
+    queryKey: ['activity-logs', { page, actionFilter }],
+    queryFn: () => {
       const params = { page, limit: 20 };
       if (actionFilter) params.actionType = actionFilter;
-      
-      // Role-based filtering
-      // Admin sees only their own logs, Super Admin sees all logs
-      if (isAdmin && !isSuperAdmin) {
-        params.userId = user?.email || user?.id;
-      }
+      if (isAdmin && !isSuperAdmin) params.userId = user?.email || user?.id;
+      return api.get('/activity-logs', { params }).then((r) => r.data);
+    },
+    placeholderData: keepPreviousData,
+  });
 
-      const { data } = await api.get('/activity-logs', { params });
-      setLogs(data.logs);
-      setPagination(data.pagination);
-    } catch {
-      toast.error('Failed to fetch activity logs');
-    } finally {
-      setLoading(false);
-    }
-  }, [actionFilter, isAdmin, isSuperAdmin, user?.email, user?.id]);
-
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  const logs = data?.logs || [];
+  const pagination = data?.pagination || { page: 1, pages: 1, total: 0 };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Activity Logs</h2>
-          <p className="text-sm text-gray-500">{pagination.total} total entries</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Activity Logs</h2>
+          <p className="text-gray-400 dark:text-slate-500 text-sm mt-0.5">{pagination.total} total entries</p>
         </div>
-        <Dropdown
-          value={actionFilter}
-          onChange={setActionFilter}
-          options={actionOptions}
-          placeholder="All Actions"
-          className="w-48"
-        />
+        <div className="w-52">
+          <Dropdown
+            value={actionFilter}
+            onChange={(v) => { setActionFilter(v); setPage(1); }}
+            options={[
+              { value: '', label: 'All Actions' },
+              { value: 'CLIENT_CREATED', label: 'Client Created' },
+              { value: 'CLIENT_UPDATED', label: 'Client Updated' },
+              { value: 'CLIENT_DELETED', label: 'Client Deleted' },
+              { value: 'STATUS_CHANGED', label: 'Status Changed' },
+              { value: 'PAYMENT_ADDED', label: 'Payment Added' },
+              { value: 'FOLLOWUP_CREATED', label: 'Follow-up Created' },
+              { value: 'FOLLOWUP_COMPLETED', label: 'Follow-up Completed' },
+            ]}
+            placeholder="All Actions"
+          />
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border">
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 dark:border-slate-700 border-t-violet-500" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="text-center py-10 text-gray-400">No activity logs found</div>
+          <div className="text-center py-16 text-gray-400 dark:text-slate-600">No activity logs found</div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
             {logs.map((log) => (
-              <div key={log._id} className="px-5 py-4 flex items-start gap-4 hover:bg-gray-50">
-                <div className="flex-1">
+              <div key={log._id} className="px-5 py-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${ACTION_DOT[log.actionType] || 'bg-gray-400 dark:bg-slate-600'}`} />
+                <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${ACTION_COLORS[log.actionType] || 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs px-2.5 py-1 rounded-lg font-medium border ${ACTION_BADGE[log.actionType] || 'bg-gray-100 dark:bg-slate-500/20 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-500/20'}`}>
                       {log.actionType.replace(/_/g, ' ')}
                     </span>
                     {log.clientId && (
                       <Link
                         to={`/clients/${log.clientId._id}`}
-                        className="text-xs text-indigo-600 hover:underline"
+                        className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition font-medium"
                       >
                         {log.clientId.fullName || log.clientId.email}
                       </Link>
                     )}
                   </div>
-                  <p className="text-sm text-gray-700">{log.description}</p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-sm text-gray-700 dark:text-slate-300">{log.description}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">
                     {new Date(log.createdAt).toLocaleString()}
-                    {log.userId && <span className="ml-2">by {log.userId}</span>}
+                    {log.userId && <span className="ml-2 text-gray-300 dark:text-slate-700">· {log.userId}</span>}
                   </p>
                 </div>
               </div>
@@ -118,24 +117,10 @@ export default function ActivityLogs() {
 
       {pagination.pages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.pages}
-          </p>
+          <p className="text-xs text-gray-400 dark:text-slate-500">Page {pagination.page} of {pagination.pages}</p>
           <div className="flex gap-2">
-            <button
-              onClick={() => fetchLogs(pagination.page - 1)}
-              disabled={pagination.page <= 1}
-              className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => fetchLogs(pagination.page + 1)}
-              disabled={pagination.page >= pagination.pages}
-              className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
-            >
-              Next
-            </button>
+            <button onClick={() => setPage((p) => p - 1)} disabled={page <= 1} className={paginationBtnCls}>Previous</button>
+            <button onClick={() => setPage((p) => p + 1)} disabled={page >= pagination.pages} className={paginationBtnCls}>Next</button>
           </div>
         </div>
       )}
