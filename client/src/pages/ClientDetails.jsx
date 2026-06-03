@@ -7,7 +7,13 @@ import { HiOutlinePencil, HiOutlinePlus, HiOutlineArrowLeft, HiOutlineCheck } fr
 import Dropdown from '../components/Dropdown';
 
 const COLOR_MAP = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b', purple: '#8b5cf6', indigo: '#6366f1' };
+const PALETTE = ['#6366f1','#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6'];
 const resolveColor = (c) => COLOR_MAP[c] || c || '#6366f1';
+const paletteColor = (name = '') => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return PALETTE[Math.abs(hash) % PALETTE.length];
+};
 
 const inputCls = 'w-full px-4 py-2.5 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
 const labelCls = 'block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider';
@@ -161,8 +167,7 @@ export default function ClientDetails() {
 
   const getStatusStyle = (statusName) => {
     const found = statusesData.find((s) => s.name === statusName);
-    if (!found) return {};
-    const hex = resolveColor(found.color);
+    const hex = found?.color ? resolveColor(found.color) : paletteColor(statusName);
     return { backgroundColor: hex + '22', color: hex, borderColor: hex + '44' };
   };
   const getStatusLabel = (statusName) => statusesData.find((s) => s.name === statusName)?.label || statusName;

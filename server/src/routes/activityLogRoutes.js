@@ -5,5 +5,6 @@ const authMiddleware = require('../middleware/auth');
 router.use(authMiddleware);
 
 router.get('/', activityLogController.getActivityLogs);
+router.delete('/', activityLogController.deleteActivityLogs);
 
 module.exports = router;

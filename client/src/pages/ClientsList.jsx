@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -12,7 +12,14 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { useAuth } from '../context/AuthContext';
 
 const COLOR_MAP = { blue: '#3b82f6', green: '#10b981', red: '#ef4444', amber: '#f59e0b', purple: '#8b5cf6', indigo: '#6366f1' };
+const PALETTE = ['#6366f1','#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6'];
 const resolveColor = (c) => COLOR_MAP[c] || c || '#6366f1';
+// Deterministic color from palette based on string — same name always same color
+const paletteColor = (name = '') => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return PALETTE[Math.abs(hash) % PALETTE.length];
+};
 
 const paginationBtnCls = 'px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] text-gray-500 dark:text-slate-400 rounded-lg disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-white transition';
 const inputCls = 'w-full px-3 py-2 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
@@ -306,6 +313,7 @@ function ClientConversationsPanel({ client }) {
 
 export default function ClientsList() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
   const [page, setPage] = useState(1);
@@ -373,8 +381,7 @@ export default function ClientsList() {
 
   const getStatusStyle = (statusName) => {
     const found = statuses.find((s) => s.name === statusName);
-    if (!found) return {};
-    const hex = resolveColor(found.color);
+    const hex = found?.color ? resolveColor(found.color) : paletteColor(statusName);
     return { backgroundColor: hex + '22', color: hex, borderColor: hex + '44' };
   };
   const getStatusLabel = (statusName) => statuses.find((s) => s.name === statusName)?.label || statusName;
@@ -434,18 +441,19 @@ export default function ClientsList() {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/[0.04]">
                 {clients.map((client) => (
-                  <tr key={client._id} className="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
+                  <tr
+                    key={client._id}
+                    onClick={() => navigate(`/clients/${client._id}`)}
+                    className="hover:bg-violet-50/40 dark:hover:bg-violet-500/[0.04] transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                           {client.fullName?.[0]?.toUpperCase()}
                         </div>
-                        <Link
-                          to={`/clients/${client._id}`}
-                          className="text-sm font-medium text-gray-800 dark:text-slate-200 hover:text-violet-600 dark:hover:text-violet-400 transition"
-                        >
+                        <span className="text-sm font-medium text-gray-800 dark:text-slate-200">
                           {client.fullName}
-                        </Link>
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">{client.email}</td>
@@ -455,7 +463,7 @@ export default function ClientsList() {
                         {getStatusLabel(client.status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
                         <Link
                           to={`/clients/${client._id}`}
