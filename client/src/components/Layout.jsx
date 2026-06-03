@@ -43,7 +43,7 @@ export default function Layout() {
   const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
   const navItems = allNavItems.filter((item) => !item.superAdminOnly || isSuperAdmin);
 
-  const launchSciInov = () => {
+  const launchsciinov = () => {
     window.open('https://sciinovdbms.com/', '_blank');
   };
 
@@ -72,7 +72,7 @@ export default function Layout() {
           </div>
           {sidebarExpanded && (
             <div>
-              <h1 className="text-sm font-bold text-gray-900 dark:text-white">SciInov</h1>
+              <h1 className="text-sm font-bold text-gray-900 dark:text-white">sciinov</h1>
               <p className="text-xs text-gray-400 dark:text-slate-500">CRM</p>
             </div>
           )}
@@ -172,8 +172,8 @@ export default function Layout() {
               <div className="hidden sm:flex items-center gap-1.5 mr-1">
                 <button
                   type="button"
-                  onClick={launchSciInov}
-                  title="Open SciInov DBMS (auto-login)"
+                  onClick={launchsciinov}
+                  title="Open sciinov DBMS (auto-login)"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-500/20 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition"
                 >
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

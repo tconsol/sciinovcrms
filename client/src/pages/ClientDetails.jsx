@@ -362,7 +362,7 @@ export default function ClientDetails() {
                 <label className={labelCls}>Date *</label>
                 <input type="date" value={convForm.followUpDate}
                   onChange={(e) => setConvForm((f) => ({ ...f, followUpDate: e.target.value }))}
-                  required className={`${inputCls} relative dark:[color-scheme:dark]`} />
+                  required className={`${inputCls} dark:[color-scheme:dark]`} />
               </div>
               <div>
                 <label className={labelCls}>Conference</label>

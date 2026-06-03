@@ -296,13 +296,6 @@ export default function ClientForm() {
           />
         </div>
 
-        <div>
-          <label className={labelCls}>Profile Image</label>
-          <input type="file" accept="image/*"
-            onChange={(e) => setImageFile(e.target.files[0] || null)}
-            className="w-full px-4 py-2.5 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-500 dark:text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-violet-600 file:text-white hover:file:bg-violet-500 file:cursor-pointer transition-all" />
-        </div>
-
         <div className="flex gap-3 pt-2 border-t border-gray-100 dark:border-white/[0.06]">
           <button type="submit" disabled={saving}
             className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all shadow-lg shadow-violet-900/30">

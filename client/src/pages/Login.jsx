@@ -80,7 +80,7 @@ export default function Login() {
                 <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">SciInov CRM</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">sciinov CRM</h1>
             <p className="text-gray-400 dark:text-slate-400 text-sm mt-1">Conference Management System</p>
           </div>
 
@@ -193,13 +193,13 @@ export default function Login() {
           {/* Footer */}
           <p className="mt-6 text-center text-xs text-gray-400 dark:text-slate-600">
             Powered by{' '}
-            <span className="text-gray-500 dark:text-slate-400 font-medium">SciInov DBMS</span>
+            <span className="text-gray-500 dark:text-slate-400 font-medium">sciinov DBMS</span>
           </p>
         </div>
 
         {/* Tip */}
         <p className="mt-4 text-center text-xs text-gray-400 dark:text-slate-600">
-          Use your SciInov account credentials to sign in
+          Use your sciinov account credentials to sign in
         </p>
       </div>
     </div>

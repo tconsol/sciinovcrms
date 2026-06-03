@@ -11,7 +11,7 @@ const authMiddleware = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     try {
-      // Validate token by calling SciInov API
+      // Validate token by calling sciinov API
       await axios.get(`${config.sciinovBaseUrl}/api/conferences`, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 5000,
@@ -25,7 +25,7 @@ const authMiddleware = async (req, res, next) => {
       if (validateError.response?.status === 401) {
         return res.status(401).json({ message: 'Token expired or invalid.' });
       }
-      // If SciInov is unreachable, still proceed with token decode
+      // If sciinov is unreachable, still proceed with token decode
     }
 
     // Decode JWT payload (without verification)

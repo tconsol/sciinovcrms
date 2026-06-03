@@ -321,7 +321,7 @@ export default function History() {
                 type="date"
                 value={convForm.followUpDate}
                 onChange={(e) => setConvForm((f) => ({ ...f, followUpDate: e.target.value }))}
-                className={`${inputCls} relative dark:[color-scheme:dark]`}
+                className={`${inputCls} dark:[color-scheme:dark]`}
                 required
               />
             </div>

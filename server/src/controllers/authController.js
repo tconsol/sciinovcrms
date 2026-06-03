@@ -16,15 +16,15 @@ exports.signin = async (req, res) => {
 
     // Validate config
     if (!config.sciinovBaseUrl) {
-      console.error('[Auth] SCIINOV_BASE_URL not configured');
+      console.error('[Auth] sciinov_BASE_URL not configured');
       return res.status(500).json({
         success: false,
-        message: 'Server configuration error: SciInov Base URL not set',
+        message: 'Server configuration error: sciinov Base URL not set',
       });
     }
 
     console.log('[Auth] Signing in user:', userId);
-    console.log('[Auth] Using SciInov URL:', config.sciinovBaseUrl);
+    console.log('[Auth] Using sciinov URL:', config.sciinovBaseUrl);
 
     const response = await axios.post(`${config.sciinovBaseUrl}/api/auth/signin`, {
       userId,
@@ -34,7 +34,7 @@ exports.signin = async (req, res) => {
     });
 
     console.log('[Auth] Login successful for:', userId);
-    console.log('[Auth] SciInov Response:', {
+    console.log('[Auth] sciinov Response:', {
       hasToken: !!response.data.token,
       hasAccessToken: !!response.data.accessToken,
       hasJwt: !!response.data.jwt,
@@ -42,8 +42,8 @@ exports.signin = async (req, res) => {
       token: response.data.token ? response.data.token.substring(0, 50) + '...' : 'undefined',
     });
     
-    // Map SciInov response to our standard format
-    // SciInov uses 'token' instead of 'accessToken'
+    // Map sciinov response to our standard format
+    // sciinov uses 'token' instead of 'accessToken'
     const tokenValue = response.data.token || response.data.accessToken || response.data.jwt;
     
     const authResponse = {
@@ -92,10 +92,10 @@ exports.signin = async (req, res) => {
 
     // Priority 1: Check connection errors
     if (error.code === 'ECONNABORTED') {
-      message = 'Request timeout. SciInov DBMS may be unreachable.';
+      message = 'Request timeout. sciinov DBMS may be unreachable.';
     } 
     else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-      message = 'Connection error. SciInov DBMS may be unreachable.';
+      message = 'Connection error. sciinov DBMS may be unreachable.';
     }
     // Priority 2: Check error message content first (most reliable for distinguishing)
     else if (
@@ -200,10 +200,10 @@ exports.ssoLaunch = async (req, res) => {
       return res.status(400).json({ message: 'Credentials required' });
     }
 
-    // Re-auth against SciInov to get fresh token
+    // Re-auth against sciinov to get fresh token
     const sciRes = await axios.post(`${config.sciinovBaseUrl}/api/auth/signin`, { userId, password }, { timeout: 10000 });
     const token = sciRes.data.token || sciRes.data.accessToken || sciRes.data.jwt;
-    if (!token) return res.status(500).json({ message: 'No token from SciInov' });
+    if (!token) return res.status(500).json({ message: 'No token from sciinov' });
 
     const roles = sciRes.data.roles || [];
     const userData = JSON.stringify({
@@ -223,7 +223,7 @@ exports.ssoLaunch = async (req, res) => {
 
     res.setHeader('Content-Type', 'text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Signing in...</title></head><body>
-<p style="font-family:sans-serif;padding:20px">Signing in to SciInov DBMS...</p>
+<p style="font-family:sans-serif;padding:20px">Signing in to sciinov DBMS...</p>
 <script>
 window.location.replace(${JSON.stringify(ssoUrl)});
 </script>
@@ -238,7 +238,7 @@ exports.logout = async (req, res) => {
   try {
     console.log('[Auth] Logging out user:', req.user?.userId);
 
-    // Send logout request to SciInov (optional - not all systems support it)
+    // Send logout request to sciinov (optional - not all systems support it)
     try {
       await axios.post(
         `${config.sciinovBaseUrl}/api/auth/logout`,
@@ -249,7 +249,7 @@ exports.logout = async (req, res) => {
         }
       );
     } catch (sciinError) {
-      console.warn('[Logout] SciInov logout failed (non-critical):', sciinError.message);
+      console.warn('[Logout] sciinov logout failed (non-critical):', sciinError.message);
       // Don't throw - logout is still successful on our end
     }
 

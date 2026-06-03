@@ -9,14 +9,14 @@ router.post('/refresh-token', authController.refreshToken);
 router.post('/logout', authMiddleware, authController.logout);
 router.post('/sso-launch', authMiddleware, authController.ssoLaunch);
 
-// Test endpoint - check SciInov connection
+// Test endpoint - check sciinov connection
 router.get('/test', async (req, res) => {
   try {
-    console.log('[Test] Checking SciInov connection to:', config.sciinovBaseUrl);
+    console.log('[Test] Checking sciinov connection to:', config.sciinovBaseUrl);
     const response = await axios.get(`${config.sciinovBaseUrl}/api/health`, {
       timeout: 5000,
     }).catch(() => {
-      // SciInov might not have /health, try /conferences
+      // sciinov might not have /health, try /conferences
       return axios.get(`${config.sciinovBaseUrl}/api/conferences`, {
         headers: { Authorization: 'Bearer test' },
         timeout: 5000,
