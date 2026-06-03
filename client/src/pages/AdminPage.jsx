@@ -12,7 +12,7 @@ import {
 const inputCls = 'w-full px-3 py-2 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
 const labelCls = 'block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider';
 
-const TABS = ['Conferences', 'Roles', 'Statuses', 'Payment Modes'];
+const TABS = ['Conferences', 'Roles', 'Statuses', 'Payment Modes', 'Conversation Via'];
 
 // ─── Conferences ──────────────────────────────────────────────────────────────
 
@@ -634,6 +634,157 @@ function PaymentModesTab({ isSuperAdmin }) {
   );
 }
 
+// ─── Conversation Via ─────────────────────────────────────────────────────────
+
+function ConversationViaTab({ isSuperAdmin }) {
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
+  const emptyForm = { name: '', label: '', isActive: true };
+  const [form, setForm] = useState(emptyForm);
+
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ['admin', 'conversation-via'],
+    queryFn: () => api.get('/admin/conversation-via').then((r) => r.data),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (data) => editItem
+      ? api.put(`/admin/conversation-via/${editItem._id}`, data)
+      : api.post('/admin/conversation-via', data),
+    onSuccess: () => {
+      toast.success(editItem ? 'Updated' : 'Created');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'conversation-via'] });
+      setShowForm(false); setEditItem(null);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to save'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.delete(`/admin/conversation-via/${id}`),
+    onSuccess: () => {
+      toast.success('Deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'conversation-via'] });
+      setDeleteId(null);
+    },
+    onError: () => toast.error('Failed to delete'),
+  });
+
+  const openAdd = () => { setForm(emptyForm); setEditItem(null); setShowForm(true); };
+  const openEdit = (item) => {
+    setForm({ name: item.name || '', label: item.label || '', isActive: item.isActive !== false });
+    setEditItem(item); setShowForm(true);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500 dark:text-slate-400">{items.length} option{items.length !== 1 ? 's' : ''}</p>
+        {isSuperAdmin && (
+          <button type="button" onClick={openAdd}
+            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-violet-900/30 transition-all">
+            <HiOutlinePlus className="w-4 h-4" /> Add Option
+          </button>
+        )}
+      </div>
+
+      {showForm && isSuperAdmin && (
+        <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(form); }}
+          className="bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-2xl p-5 space-y-4">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{editItem ? 'Edit Option' : 'New Option'}</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className={labelCls}>Key (internal) *</label>
+              <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                required placeholder="e.g. WHATSAPP" disabled={Boolean(editItem)}
+                className={`${inputCls} font-mono ${editItem ? 'opacity-60 cursor-not-allowed' : ''}`} />
+            </div>
+            <div>
+              <label className={labelCls}>Display Label</label>
+              <input value={form.label} onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
+                placeholder="e.g. WhatsApp" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Status</label>
+              <Dropdown
+                value={form.isActive ? 'true' : 'false'}
+                onChange={(v) => setForm((f) => ({ ...f, isActive: v === 'true' }))}
+                options={[{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }]}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button type="submit" disabled={saveMutation.isPending}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all">
+              {saveMutation.isPending ? 'Saving...' : editItem ? 'Update' : 'Create'}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)}
+              className="px-5 py-2 border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white rounded-xl text-sm font-medium transition-all">
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <div className="animate-spin rounded-full h-7 w-7 border-2 border-gray-200 dark:border-slate-700 border-t-violet-500" />
+        </div>
+      ) : items.length === 0 ? (
+        <p className="text-center py-10 text-gray-400 dark:text-slate-600 text-sm">No options yet. Super admin can add them.</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={item._id}
+              className="flex items-center justify-between p-4 bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.06] rounded-2xl hover:bg-gray-50 dark:hover:bg-white/[0.05] transition">
+              <div className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full shrink-0 ${item.isActive ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-slate-600'}`} />
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.label || item.name}</p>
+                  {item.label && item.label !== item.name && (
+                    <p className="text-xs text-gray-400 dark:text-slate-500 font-mono">{item.name}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className={`text-xs px-2 py-0.5 rounded-lg font-medium mr-2 ${item.isActive ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-slate-500'}`}>
+                  {item.isActive ? 'Active' : 'Inactive'}
+                </span>
+                {isSuperAdmin && (
+                  <>
+                    <button type="button" onClick={() => openEdit(item)}
+                      className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition">
+                      <HiOutlinePencil className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={() => setDeleteId(item._id)}
+                      className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition">
+                      <HiOutlineTrash className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isSuperAdmin && (
+        <ConfirmDialog
+          isOpen={Boolean(deleteId)}
+          title="Delete Option?"
+          message="This option will be removed from the Conversation Via list."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous
+          onConfirm={() => deleteMutation.mutate(deleteId)}
+          onCancel={() => setDeleteId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -670,6 +821,7 @@ export default function AdminPage() {
         {activeTab === 1 && <RolesTab isSuperAdmin={isSuperAdmin} />}
         {activeTab === 2 && <StatusesTab isSuperAdmin={isSuperAdmin} />}
         {activeTab === 3 && <PaymentModesTab isSuperAdmin={isSuperAdmin} />}
+        {activeTab === 4 && <ConversationViaTab isSuperAdmin={isSuperAdmin} />}
       </div>
     </div>
   );

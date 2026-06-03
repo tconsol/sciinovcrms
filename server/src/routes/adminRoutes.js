@@ -28,4 +28,10 @@ router.post('/payment-modes', adminController.createPaymentMode);
 router.put('/payment-modes/:id', adminController.updatePaymentMode);
 router.delete('/payment-modes/:id', adminController.deletePaymentMode);
 
+// Conversation Via
+router.get('/conversation-via', adminController.getConversationVia);
+router.post('/conversation-via', adminController.createConversationVia);
+router.put('/conversation-via/:id', adminController.updateConversationVia);
+router.delete('/conversation-via/:id', adminController.deleteConversationVia);
+
 module.exports = router;

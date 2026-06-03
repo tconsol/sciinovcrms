@@ -23,7 +23,19 @@ exports.getDashboard = async (req, res) => {
       Client.countDocuments({ isDeleted: false, status: 'REGISTERED' }),
       Client.countDocuments({ isDeleted: false, status: 'DECLINED' }),
       Client.countDocuments({ isDeleted: false, status: 'NEXT_EDITION_INTEREST' }),
-      Payment.aggregate([{ $group: { _id: null, total: { $sum: '$amountPaid' } } }]),
+      Payment.aggregate([
+        {
+          $lookup: {
+            from: 'clients',
+            localField: 'clientId',
+            foreignField: '_id',
+            as: 'client',
+          },
+        },
+        { $unwind: '$client' },
+        { $match: { 'client.isDeleted': false } },
+        { $group: { _id: null, total: { $sum: '$amountPaid' } } },
+      ]),
       FollowUp.countDocuments({ status: 'PENDING' }),
       FollowUp.countDocuments({
         status: 'PENDING',

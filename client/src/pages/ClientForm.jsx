@@ -24,7 +24,7 @@ export default function ClientForm() {
 
   const [form, setForm] = useState({
     fullName: '', email: '', phone: '', organization: '', country: '',
-    role: '', topics: [], status: '', conferenceNames: [], notes: '',
+    role: '', topics: [], status: '', conferenceNames: [], conversationVia: '', notes: '',
   });
 
   const [paymentForm, setPaymentForm] = useState({
@@ -56,6 +56,11 @@ export default function ClientForm() {
     queryFn: () => api.get('/admin/payment-modes').then((r) => r.data),
     staleTime: 5 * 60_000,
   });
+  const { data: conversationViaData = [] } = useQuery({
+    queryKey: ['admin', 'conversation-via'],
+    queryFn: () => api.get('/admin/conversation-via').then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
 
   const roles = rolesData.filter((r) => r.isActive);
   const statuses = statusesData.filter((s) => s.isActive);
@@ -80,6 +85,7 @@ export default function ClientForm() {
         topics: Array.isArray(clientData.topics) ? clientData.topics : (clientData.topic ? [clientData.topic] : []),
         status: clientData.status || '',
         conferenceNames: Array.isArray(clientData.conferenceNames) ? clientData.conferenceNames : (clientData.conferenceName ? [clientData.conferenceName] : []),
+        conversationVia: clientData.conversationVia || '',
         notes: clientData.notes || '',
       });
     }
@@ -214,6 +220,13 @@ export default function ClientForm() {
               onChange={(value) => setForm((prev) => ({ ...prev, status: value }))}
               options={statuses.map((s) => ({ value: s.name, label: s.label || s.name }))}
               placeholder="Select Status" />
+          </div>
+          <div>
+            <label className={labelCls}>Conversation Via</label>
+            <Dropdown value={form.conversationVia}
+              onChange={(value) => setForm((prev) => ({ ...prev, conversationVia: value }))}
+              options={[{ value: '', label: 'Select...' }, ...conversationViaData.filter((v) => v.isActive).map((v) => ({ value: v.name, label: v.label || v.name }))]}
+              placeholder="Select Channel" />
           </div>
         </div>
 

@@ -46,6 +46,10 @@ const clientSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    conversationVia: {
+      type: String,
+      trim: true,
+    },
     notes: {
       type: String,
       trim: true,

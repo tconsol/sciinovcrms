@@ -1,4 +1,6 @@
 const Client = require('../models/Client');
+const FollowUp = require('../models/FollowUp');
+const Payment = require('../models/Payment');
 const logActivity = require('../utils/logActivity');
 const socket = require('../socket');
 
@@ -168,6 +170,12 @@ exports.deleteClient = async (req, res) => {
       return res.status(404).json({ message: 'Client not found' });
     }
 
+    // Cascade delete all related data
+    await Promise.all([
+      FollowUp.deleteMany({ clientId: client._id }),
+      Payment.deleteMany({ clientId: client._id }),
+    ]);
+
     await logActivity({
       userId: req.user.userId,
       actionType: 'CLIENT_DELETED',
@@ -176,6 +184,8 @@ exports.deleteClient = async (req, res) => {
     });
 
     socket.emit('clients:changed');
+    socket.emit('payments:changed');
+    socket.emit('followups:changed');
     res.json({ message: 'Client deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

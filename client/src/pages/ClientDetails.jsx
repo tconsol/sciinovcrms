@@ -296,6 +296,7 @@ export default function ClientDetails() {
           <Info label="Organization" value={client.organization} />
           <Info label="Country" value={client.country} />
           <Info label="Role" value={client.role} />
+          <Info label="Conversation Via" value={client.conversationVia} />
           <Info label="Created" value={new Date(client.createdAt).toLocaleDateString()} />
           {client.conferenceNames?.length > 0 && (
             <div className="sm:col-span-2 lg:col-span-3">

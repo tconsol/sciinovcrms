@@ -2,6 +2,7 @@ const ConferenceConfig = require('../models/ConferenceConfig');
 const RoleConfig = require('../models/RoleConfig');
 const StatusConfig = require('../models/StatusConfig');
 const PaymentModeConfig = require('../models/PaymentModeConfig');
+const ConversationViaConfig = require('../models/ConversationViaConfig');
 const socket = require('../socket');
 
 
@@ -172,6 +173,49 @@ exports.deletePaymentMode = async (req, res) => {
   try {
     const mode = await PaymentModeConfig.findByIdAndDelete(req.params.id);
     if (!mode) return res.status(404).json({ message: 'Payment mode not found' });
+    socket.emit('admin:changed');
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── Conversation Via ────────────────────────────────────────────
+exports.getConversationVia = async (req, res) => {
+  try {
+    const items = await ConversationViaConfig.find().sort({ createdAt: 1 });
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.createConversationVia = async (req, res) => {
+  try {
+    const item = await ConversationViaConfig.create({ ...req.body, createdBy: req.user.userId });
+    socket.emit('admin:changed');
+    res.status(201).json(item);
+  } catch (err) {
+    if (err.code === 11000) return res.status(409).json({ message: 'Already exists' });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.updateConversationVia = async (req, res) => {
+  try {
+    const item = await ConversationViaConfig.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!item) return res.status(404).json({ message: 'Not found' });
+    socket.emit('admin:changed');
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.deleteConversationVia = async (req, res) => {
+  try {
+    const item = await ConversationViaConfig.findByIdAndDelete(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Not found' });
     socket.emit('admin:changed');
     res.json({ message: 'Deleted successfully' });
   } catch (err) {
