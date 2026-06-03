@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { SocketProvider } from '../context/SocketContext';
+import api from '../services/api';
+import openSidebarIcon from '../assets/opensidebar.png';
+import closeSidebarIcon from '../assets/closesidebar.png';
 import {
   HiOutlineHome,
   HiOutlineUsers,
@@ -11,12 +14,113 @@ import {
   HiOutlineLogout,
   HiOutlineX,
   HiOutlineChevronDown,
-  HiOutlineChevronRight,
-  HiOutlineChevronLeft,
   HiOutlineSun,
   HiOutlineMoon,
   HiOutlineCog,
+  HiOutlineSearch,
 } from 'react-icons/hi';
+
+function QuickSearch() {
+  const [q, setQ] = useState('');
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const ref = useRef(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const search = async (val) => {
+    if (!val.trim()) { setResults([]); setOpen(false); return; }
+    setLoading(true);
+    try {
+      const { data } = await api.get('/clients', { params: { search: val, limit: 6 } });
+      setResults(data.clients || []);
+      setOpen(true);
+    } catch { setResults([]); }
+    finally { setLoading(false); }
+  };
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setQ(val);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => search(val), 300);
+  };
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' && results.length > 0) {
+      navigate(`/clients/${results[0]._id}`);
+      setQ(''); setResults([]); setOpen(false);
+    }
+    if (e.key === 'Escape') setOpen(false);
+  };
+
+  const pick = (id) => {
+    navigate(`/clients/${id}`);
+    setQ(''); setResults([]); setOpen(false);
+  };
+
+  return (
+    <div ref={ref} className="relative hidden md:flex items-center gap-2">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/[0.06] border border-gray-200 dark:border-white/10 rounded-xl hover:border-violet-400 dark:hover:border-violet-500/50 focus-within:border-violet-500 dark:focus-within:border-violet-500/60 focus-within:ring-2 focus-within:ring-violet-500/20 transition-all w-56">
+        <HiOutlineSearch className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
+        <input
+          type="text"
+          value={q}
+          onChange={handleChange}
+          onKeyDown={handleKey}
+          onFocus={() => q && results.length && setOpen(true)}
+          placeholder="Search client..."
+          className="bg-transparent text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 outline-none flex-1"
+        />
+        {loading && <div className="w-3 h-3 border border-gray-300 dark:border-slate-600 border-t-violet-500 rounded-full animate-spin shrink-0" />}
+        {q && !loading && (
+          <button type="button" onClick={() => { setQ(''); setResults([]); setOpen(false); }}>
+            <HiOutlineX className="w-3 h-3 text-gray-400 dark:text-slate-500" />
+          </button>
+        )}
+      </div>
+      <button type="button" onClick={() => q.trim() && search(q)}
+        disabled={!q.trim() || loading}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-md shadow-violet-900/30 disabled:opacity-40 disabled:cursor-not-allowed transition">
+        <HiOutlineSearch className="w-3.5 h-3.5" />
+        Search
+      </button>
+
+      {open && results.length > 0 && (
+        <div className="absolute top-full mt-2 left-0 w-72 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl z-[300] overflow-hidden">
+          {results.map((c) => (
+            <button key={c._id} type="button" onClick={() => pick(c._id)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition text-left group">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                {c.fullName?.[0]?.toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-800 dark:text-slate-200 group-hover:text-violet-600 dark:group-hover:text-violet-400 truncate">{c.fullName}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{c.email}</p>
+              </div>
+            </button>
+          ))}
+          <div className="px-4 py-2 border-t border-gray-100 dark:border-white/[0.06] text-[10px] text-gray-400 dark:text-slate-600">
+            Press Enter to open first result · Esc to close
+          </div>
+        </div>
+      )}
+
+      {open && q && results.length === 0 && !loading && (
+        <div className="absolute top-full mt-2 left-0 w-72 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl z-[300] px-4 py-4 text-center text-xs text-gray-400 dark:text-slate-600">
+          No clients found for "{q}"
+        </div>
+      )}
+    </div>
+  );
+}
 
 const allNavItems = [
   { to: '/', icon: HiOutlineHome, label: 'Dashboard', end: true, superAdminOnly: true },
@@ -146,28 +250,34 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
         <header className="bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06] shrink-0 z-30">
-          <div className="px-4 lg:px-6 py-3 flex items-center justify-between h-16">
-            {/* Toggle */}
-            <button
-              type="button"
-              onClick={() => setSidebarExpanded(!sidebarExpanded)}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/[0.06] transition text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
-            >
-              {sidebarExpanded ? (
-                <HiOutlineChevronLeft className="w-5 h-5" />
-              ) : (
-                <HiOutlineChevronRight className="w-5 h-5" />
-              )}
-            </button>
+          <div className="px-4 lg:px-6 py-3 flex items-center justify-between h-16 gap-4">
+            {/* Left: Toggle + Welcome */}
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSidebarExpanded(!sidebarExpanded)}
+                title={sidebarExpanded ? 'Close sidebar' : 'Open sidebar'}
+                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/[0.06] transition"
+              >
+                <img
+                  src={sidebarExpanded ? closeSidebarIcon : openSidebarIcon}
+                  alt={sidebarExpanded ? 'Close sidebar' : 'Open sidebar'}
+                  className="w-5 h-5 dark:invert"
+                />
+              </button>
+              <div className="hidden sm:block">
+                <p className="text-xs text-gray-400 dark:text-slate-500">Welcome back</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.username || user?.email || 'User'}</p>
+              </div>
+            </div>
 
-            {/* Center welcome */}
-            <div className="hidden sm:block flex-1 text-center">
-              <p className="text-xs text-gray-400 dark:text-slate-500">Welcome back</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">{user?.username || user?.email || 'User'}</p>
+            {/* Center: Search */}
+            <div className="flex-1 flex items-center justify-center min-w-0">
+              <QuickSearch />
             </div>
 
             {/* Right: theme toggle + user dropdown */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {/* Quick Links */}
               <div className="hidden sm:flex items-center gap-1.5 mr-1">
                 <button

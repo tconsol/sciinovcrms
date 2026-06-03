@@ -113,7 +113,7 @@ function AdminHBar({ data, dataKey, prefix = '' }) {
 }
 
 export default function Dashboard() {
-  const [period, setPeriod] = useState('month');
+  const [period, setPeriod] = useState('day');
   const now = new Date();
   const fmtDate = (d) => d.toISOString().slice(0, 10);
   const [customFrom, setCustomFrom] = useState(fmtDate(new Date(now.getFullYear(), now.getMonth(), 1)));
