@@ -37,7 +37,14 @@ exports.getDashboard = async (req, res) => {
       convsByAdmin, paymentsByAdmin,
     ] = await Promise.all([
       Client.countDocuments({ isDeleted: false }),
-      Client.countDocuments({ isDeleted: false, status: 'PAID' }),
+      // paid clients = distinct non-deleted clients with at least one payment
+      Payment.aggregate([
+        { $lookup: { from: 'clients', localField: 'clientId', foreignField: '_id', as: 'client' } },
+        { $unwind: '$client' },
+        { $match: { 'client.isDeleted': false } },
+        { $group: { _id: '$clientId' } },
+        { $count: 'count' },
+      ]),
       Payment.aggregate([
         { $lookup: { from: 'clients', localField: 'clientId', foreignField: '_id', as: 'client' } },
         { $unwind: '$client' },
@@ -174,11 +181,14 @@ exports.getDashboard = async (req, res) => {
       yearlyChart.push({ year: `${y}`, revenue: yearlyMap[y]?.revenue || 0, payments: yearlyMap[y]?.count || 0 });
     }
 
+    const paidCount = paidClients[0]?.count || 0;
+
     res.json({
       stats: {
-        totalClients, paidClients,
+        totalClients,
+        paidClients: paidCount,
         totalRevenue: totalRevenue[0]?.total || 0,
-        conversionRate: parseFloat(totalClients > 0 ? ((paidClients / totalClients) * 100).toFixed(1) : 0),
+        conversionRate: parseFloat(totalClients > 0 ? ((paidCount / totalClients) * 100).toFixed(1) : 0),
         pendingFollowUps, overdueFollowUps,
         todayClients,
         todayRevenue: todayPaymentsAgg[0]?.total || 0,
