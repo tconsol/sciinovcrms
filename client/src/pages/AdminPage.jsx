@@ -6,13 +6,13 @@ import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Dropdown from '../components/Dropdown';
 import {
-  HiOutlinePlus, HiOutlinePencil, HiOutlineTrash,
+  HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineUpload, HiOutlinePhotograph,
 } from 'react-icons/hi';
 
 const inputCls = 'w-full px-3 py-2 bg-gray-100 dark:bg-white/[0.06] border border-gray-300 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/20 transition-all';
 const labelCls = 'block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider';
 
-const TABS = ['Conferences', 'Roles', 'Statuses', 'Payment Modes', 'Conversation Via'];
+const TABS = ['Conferences', 'Roles', 'Statuses', 'Payment Modes', 'Conversation Via', 'Branding'];
 
 // ─── Conferences ──────────────────────────────────────────────────────────────
 
@@ -785,6 +785,97 @@ function ConversationViaTab({ isSuperAdmin }) {
   );
 }
 
+// ─── Branding ─────────────────────────────────────────────────────────────────
+
+function BrandingTab({ isSuperAdmin }) {
+  const queryClient = useQueryClient();
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const { data: logoUrl, isLoading } = useQuery({
+    queryKey: ['settings', 'logo'],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get('/settings/logo', { responseType: 'blob' });
+        return URL.createObjectURL(data);
+      } catch (err) {
+        if (err.response?.status === 404) return null;
+        throw err;
+      }
+    },
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: (selectedFile) => {
+      const formData = new FormData();
+      formData.append('logo', selectedFile);
+      return api.post('/settings/logo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    },
+    onSuccess: () => {
+      toast.success('Logo updated');
+      setFile(null);
+      setPreviewUrl(null);
+      queryClient.invalidateQueries({ queryKey: ['settings', 'logo'] });
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to upload logo'),
+  });
+
+  const handleFileChange = (e) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setFile(selected);
+    setPreviewUrl(URL.createObjectURL(selected));
+  };
+
+  const displayUrl = previewUrl || logoUrl;
+
+  return (
+    <div className="space-y-5 max-w-lg">
+      <div>
+        <p className={labelCls}>Current Logo</p>
+        <div className="w-48 h-48 flex items-center justify-center bg-gray-50 dark:bg-white/[0.03] border border-dashed border-gray-300 dark:border-white/10 rounded-2xl overflow-hidden">
+          {isLoading ? (
+            <div className="animate-spin rounded-full h-7 w-7 border-2 border-gray-200 dark:border-slate-700 border-t-violet-500" />
+          ) : displayUrl ? (
+            <img src={displayUrl} alt="Company logo" className="max-w-full max-h-full object-contain p-3" />
+          ) : (
+            <div className="text-center text-gray-400 dark:text-slate-600 text-xs px-4">
+              <HiOutlinePhotograph className="w-8 h-8 mx-auto mb-2" />
+              No logo uploaded yet
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isSuperAdmin ? (
+        <div className="space-y-3">
+          <div>
+            <label className={labelCls}>Upload New Logo</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 dark:file:bg-violet-500/10 file:text-violet-700 dark:file:text-violet-400 hover:file:bg-violet-100 dark:hover:file:bg-violet-500/20 cursor-pointer"
+            />
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5">PNG, JPG, GIF or WEBP. Max 5MB. Used on all generated PDF documents.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => file && uploadMutation.mutate(file)}
+            disabled={!file || uploadMutation.isPending}
+            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-900/30 transition-all"
+          >
+            <HiOutlineUpload className="w-4 h-4" />
+            {uploadMutation.isPending ? 'Uploading...' : 'Upload Logo'}
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-gray-400 dark:text-slate-500">Only super admins can update the company logo.</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
@@ -822,6 +913,7 @@ export default function AdminPage() {
         {activeTab === 2 && <StatusesTab isSuperAdmin={isSuperAdmin} />}
         {activeTab === 3 && <PaymentModesTab isSuperAdmin={isSuperAdmin} />}
         {activeTab === 4 && <ConversationViaTab isSuperAdmin={isSuperAdmin} />}
+        {activeTab === 5 && <BrandingTab isSuperAdmin={isSuperAdmin} />}
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ import {
   HiOutlineMoon,
   HiOutlineCog,
   HiOutlineSearch,
+  HiOutlineDocumentText,
 } from 'react-icons/hi';
 
 function QuickSearch() {
@@ -126,6 +127,7 @@ const allNavItems = [
   { to: '/', icon: HiOutlineHome, label: 'Dashboard', end: true, superAdminOnly: true },
   { to: '/clients', icon: HiOutlineUsers, label: 'Clients' },
   { to: '/conversations', icon: HiOutlineClock, label: 'Conversations' },
+  { to: '/documents', icon: HiOutlineDocumentText, label: 'Documents' },
   { to: '/activity-logs', icon: HiOutlineClipboardList, label: 'Activity Logs', superAdminOnly: true },
   { to: '/admin', icon: HiOutlineCog, label: 'Admin Config', superAdminOnly: true },
 ];

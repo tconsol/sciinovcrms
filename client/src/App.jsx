@@ -11,6 +11,7 @@ import FollowUps from './pages/FollowUps';
 import ActivityLogs from './pages/ActivityLogs';
 import AdminPage from './pages/AdminPage';
 import History from './pages/History';
+import DocumentGenerator from './pages/DocumentGenerator';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="payments" element={<Payments />} />
         <Route path="conversations" element={<FollowUps />} />
         <Route path="history" element={<History />} />
+        <Route path="documents" element={<DocumentGenerator />} />
         <Route path="activity-logs" element={<SuperAdminRoute><ActivityLogs /></SuperAdminRoute>} />
         <Route path="admin" element={<SuperAdminRoute><AdminPage /></SuperAdminRoute>} />
       </Route>

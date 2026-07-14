@@ -21,6 +21,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const activityLogRoutes = require('./routes/activityLogRoutes');
 const sciinovRoutes = require('./routes/sciinovRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
+const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -84,6 +86,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/sciinov', sciinovRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/documents', documentRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

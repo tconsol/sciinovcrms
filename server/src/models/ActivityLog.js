@@ -17,6 +17,8 @@ const activityLogSchema = new mongoose.Schema(
         'FOLLOWUP_CREATED',
         'FOLLOWUP_UPDATED',
         'FOLLOWUP_COMPLETED',
+        'LOGO_UPDATED',
+        'DOCUMENT_GENERATED',
       ],
       required: true,
     },
