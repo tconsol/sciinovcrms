@@ -5,7 +5,7 @@ const socket = require('../socket');
 
 exports.createFollowUp = async (req, res) => {
   try {
-    const { clientId } = req.body;
+    const { clientId, outcome } = req.body;
 
     const client = await Client.findOne({ _id: clientId, isDeleted: false });
     if (!client) {
@@ -23,6 +23,21 @@ exports.createFollowUp = async (req, res) => {
       description: `Conversation logged for ${client.fullName}`,
       clientId: client._id,
     });
+
+    // A conversation's outcome represents the client's latest known status —
+    // keep Client.status in sync so lists/dashboards don't show a stale value.
+    if (outcome && outcome !== client.status) {
+      const oldStatus = client.status;
+      await Client.findByIdAndUpdate(clientId, { status: outcome });
+      await logActivity({
+        userId: req.user.userId,
+        actionType: 'STATUS_CHANGED',
+        description: `Status changed from ${oldStatus} to ${outcome} for ${client.fullName}`,
+        clientId: client._id,
+        metadata: { oldStatus, newStatus: outcome },
+      });
+      socket.emit('clients:changed');
+    }
 
     socket.emit('followups:changed');
     res.status(201).json(followUp);
@@ -88,7 +103,7 @@ exports.getAllFollowUps = async (req, res) => {
 
 exports.updateFollowUp = async (req, res) => {
   try {
-    const existing = await FollowUp.findById(req.params.id).select('status');
+    const existing = await FollowUp.findById(req.params.id).select('status outcome clientId');
     if (req.body.status === 'COMPLETED' && existing?.status !== 'COMPLETED') {
       req.body.completedBy = req.user.userId;
       req.body.completedAt = new Date();
@@ -116,6 +131,23 @@ exports.updateFollowUp = async (req, res) => {
         description: `Conversation updated`,
         clientId: followUp.clientId,
       });
+    }
+
+    // Keep Client.status in sync when this conversation's outcome changes.
+    if (req.body.outcome && req.body.outcome !== existing?.outcome) {
+      const client = await Client.findOne({ _id: followUp.clientId, isDeleted: false });
+      if (client && client.status !== req.body.outcome) {
+        const oldStatus = client.status;
+        await Client.findByIdAndUpdate(client._id, { status: req.body.outcome });
+        await logActivity({
+          userId: req.user.userId,
+          actionType: 'STATUS_CHANGED',
+          description: `Status changed from ${oldStatus} to ${req.body.outcome} for ${client.fullName}`,
+          clientId: client._id,
+          metadata: { oldStatus, newStatus: req.body.outcome },
+        });
+        socket.emit('clients:changed');
+      }
     }
 
     socket.emit('followups:changed');

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -791,6 +791,7 @@ function BrandingTab({ isSuperAdmin }) {
   const queryClient = useQueryClient();
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [form, setForm] = useState(null);
 
   const { data: logoUrl, isLoading } = useQuery({
     queryKey: ['settings', 'logo'],
@@ -804,6 +805,25 @@ function BrandingTab({ isSuperAdmin }) {
       }
     },
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => api.get('/settings').then((r) => r.data),
+  });
+
+  // Seed the editable form once settings load — refs elsewhere (e.g. Documents) always
+  // re-fetch ['settings'] fresh, this local copy is only for the edit form itself.
+  useEffect(() => {
+    if (settings && !form) {
+      setForm({
+        orgName: settings.orgName || '',
+        orgWebsite: settings.orgWebsite || '',
+        contactAddress: settings.contactAddress || '',
+        contactEmail: settings.contactEmail || '',
+        contactWhatsapp: settings.contactWhatsapp || '',
+      });
+    }
+  }, [settings, form]);
 
   const uploadMutation = useMutation({
     mutationFn: (selectedFile) => {
@@ -820,6 +840,15 @@ function BrandingTab({ isSuperAdmin }) {
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to upload logo'),
   });
 
+  const saveSettingsMutation = useMutation({
+    mutationFn: (data) => api.put('/settings', data),
+    onSuccess: () => {
+      toast.success('Settings saved');
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to save settings'),
+  });
+
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
@@ -830,7 +859,7 @@ function BrandingTab({ isSuperAdmin }) {
   const displayUrl = previewUrl || logoUrl;
 
   return (
-    <div className="space-y-5 max-w-lg">
+    <div className="space-y-8 max-w-lg">
       <div>
         <p className={labelCls}>Current Logo</p>
         <div className="w-48 h-48 flex items-center justify-center bg-gray-50 dark:bg-white/[0.03] border border-dashed border-gray-300 dark:border-white/10 rounded-2xl overflow-hidden">
@@ -845,33 +874,85 @@ function BrandingTab({ isSuperAdmin }) {
             </div>
           )}
         </div>
+
+        {isSuperAdmin && (
+          <div className="space-y-3 mt-4">
+            <div>
+              <label className={labelCls}>Upload New Logo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 dark:file:bg-violet-500/10 file:text-violet-700 dark:file:text-violet-400 hover:file:bg-violet-100 dark:hover:file:bg-violet-500/20 cursor-pointer"
+              />
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5">PNG, JPG, GIF or WEBP. Max 5MB. Used on all generated PDF documents.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => file && uploadMutation.mutate(file)}
+              disabled={!file || uploadMutation.isPending}
+              className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-900/30 transition-all"
+            >
+              <HiOutlineUpload className="w-4 h-4" />
+              {uploadMutation.isPending ? 'Uploading...' : 'Upload Logo'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {isSuperAdmin ? (
-        <div className="space-y-3">
-          <div>
-            <label className={labelCls}>Upload New Logo</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="block w-full text-sm text-gray-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-violet-50 dark:file:bg-violet-500/10 file:text-violet-700 dark:file:text-violet-400 hover:file:bg-violet-100 dark:hover:file:bg-violet-500/20 cursor-pointer"
-            />
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5">PNG, JPG, GIF or WEBP. Max 5MB. Used on all generated PDF documents.</p>
+      <div className="pt-6 border-t border-gray-100 dark:border-white/[0.06]">
+        <p className={labelCls}>Organization Details</p>
+        <p className="text-xs text-gray-400 dark:text-slate-500 mb-4 -mt-1">Default header/footer info for generated documents — each document can still override these.</p>
+
+        {!form ? (
+          <div className="flex justify-center py-6">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 dark:border-slate-700 border-t-violet-500" />
           </div>
-          <button
-            type="button"
-            onClick={() => file && uploadMutation.mutate(file)}
-            disabled={!file || uploadMutation.isPending}
-            className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-900/30 transition-all"
+        ) : (
+          <form
+            onSubmit={(e) => { e.preventDefault(); saveSettingsMutation.mutate(form); }}
+            className="space-y-4"
           >
-            <HiOutlineUpload className="w-4 h-4" />
-            {uploadMutation.isPending ? 'Uploading...' : 'Upload Logo'}
-          </button>
-        </div>
-      ) : (
-        <p className="text-xs text-gray-400 dark:text-slate-500">Only super admins can update the company logo.</p>
-      )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Organization Name</label>
+                <input value={form.orgName} onChange={(e) => setForm((f) => ({ ...f, orgName: e.target.value }))}
+                  disabled={!isSuperAdmin} placeholder="e.g. Sciinov Group" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Website</label>
+                <input value={form.orgWebsite} onChange={(e) => setForm((f) => ({ ...f, orgWebsite: e.target.value }))}
+                  disabled={!isSuperAdmin} placeholder="https://..." className={inputCls} />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Address</label>
+              <input value={form.contactAddress} onChange={(e) => setForm((f) => ({ ...f, contactAddress: e.target.value }))}
+                disabled={!isSuperAdmin} placeholder="Street, City, State, ZIP, Country" className={inputCls} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Contact Email</label>
+                <input type="email" value={form.contactEmail} onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
+                  disabled={!isSuperAdmin} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Contact WhatsApp</label>
+                <input value={form.contactWhatsapp} onChange={(e) => setForm((f) => ({ ...f, contactWhatsapp: e.target.value }))}
+                  disabled={!isSuperAdmin} className={inputCls} />
+              </div>
+            </div>
+            {isSuperAdmin && (
+              <button type="submit" disabled={saveSettingsMutation.isPending}
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all">
+                {saveSettingsMutation.isPending ? 'Saving...' : 'Save Details'}
+              </button>
+            )}
+          </form>
+        )}
+
+        {!isSuperAdmin && <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">Only super admins can update organization details.</p>}
+      </div>
     </div>
   );
 }

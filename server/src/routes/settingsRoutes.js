@@ -9,4 +9,7 @@ router.use(authMiddleware);
 router.get('/logo', settingsController.getLogo);
 router.post('/logo', roleMiddleware('ROLE_SUPER_ADMIN'), uploadMemory.single('logo'), settingsController.uploadLogo);
 
+router.get('/', settingsController.getSettings);
+router.put('/', roleMiddleware('ROLE_SUPER_ADMIN'), settingsController.updateSettings);
+
 module.exports = router;

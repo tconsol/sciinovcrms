@@ -127,7 +127,7 @@ const allNavItems = [
   { to: '/', icon: HiOutlineHome, label: 'Dashboard', end: true, superAdminOnly: true },
   { to: '/clients', icon: HiOutlineUsers, label: 'Clients' },
   { to: '/conversations', icon: HiOutlineClock, label: 'Conversations' },
-  { to: '/documents', icon: HiOutlineDocumentText, label: 'Documents' },
+  { to: '/documents', icon: HiOutlineDocumentText, label: 'Documents', adminOnly: true },
   { to: '/activity-logs', icon: HiOutlineClipboardList, label: 'Activity Logs', superAdminOnly: true },
   { to: '/admin', icon: HiOutlineCog, label: 'Admin Config', superAdminOnly: true },
 ];
@@ -147,7 +147,12 @@ export default function Layout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
-  const navItems = allNavItems.filter((item) => !item.superAdminOnly || isSuperAdmin);
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN');
+  const navItems = allNavItems.filter((item) => {
+    if (item.superAdminOnly) return isSuperAdmin;
+    if (item.adminOnly) return isSuperAdmin || isAdmin;
+    return true;
+  });
 
   const launchsciinov = () => {
     window.open('https://sciinovdbms.com/', '_blank');

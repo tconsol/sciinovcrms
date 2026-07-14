@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import {
@@ -181,10 +181,28 @@ export default function Dashboard() {
   // Chart data for custom range
   const customChart = analyticsData?.chart || [];
 
-  const pieData = clientsByStatus.map((item) => {
-    const sc = statusesData.find((s) => s.name === item._id);
-    return { name: sc?.label || item._id || '—', value: item.count, color: sc?.color ? resolveColor(sc.color) : paletteColor(item._id) };
-  });
+  // Ranked breakdown, not a donut: past ~7 categories a pie/legend blurs together,
+  // so this shows the top statuses as bars and folds the long tail into "Other".
+  const STATUS_TOP_N = 7;
+  const statusRanked = [...clientsByStatus]
+    .map((item) => {
+      const sc = statusesData.find((s) => s.name === item._id);
+      return { name: sc?.label || item._id || '—', value: item.count, dotColor: sc?.color ? resolveColor(sc.color) : paletteColor(item._id) };
+    })
+    .sort((a, b) => b.value - a.value);
+  const statusBreakdown = statusRanked.length > STATUS_TOP_N
+    ? [
+        ...statusRanked.slice(0, STATUS_TOP_N),
+        {
+          name: 'Other',
+          value: statusRanked.slice(STATUS_TOP_N).reduce((sum, s) => sum + s.value, 0),
+          dotColor: '#9ca3af',
+          title: statusRanked.slice(STATUS_TOP_N).map((s) => `${s.name} (${s.value})`).join(', '),
+        },
+      ]
+    : statusRanked;
+  const statusTotal = statusRanked.reduce((sum, s) => sum + s.value, 0);
+  const statusMax = statusBreakdown.length ? Math.max(...statusBreakdown.map((s) => s.value)) : 0;
 
   return (
     <div className="space-y-6">
@@ -308,30 +326,33 @@ export default function Dashboard() {
       {/* Status + Role */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ChartCard title="Client Status Breakdown">
-          {pieData.length === 0 ? <p className="text-center py-12 text-gray-400 dark:text-slate-600 text-sm">No clients yet</p> : (
+          {statusBreakdown.length === 0 ? <p className="text-center py-12 text-gray-400 dark:text-slate-600 text-sm">No clients yet</p> : (
             <>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90}
-                    paddingAngle={3} dataKey="value" strokeWidth={0}>
-                    {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip content={({ active, payload }) => active && payload?.length
-                    ? <div className="bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2 text-xs text-white shadow-2xl">
-                        <p className="font-semibold">{payload[0].name}</p>
-                        <p className="text-white/60">{payload[0].value} clients</p>
-                      </div> : null} />
-                  <Legend formatter={(v) => <span style={{ fontSize: 11, color: '#94a3b8' }}>{v}</span>} iconType="circle" iconSize={8} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {pieData.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-gray-500 dark:text-slate-400 truncate">{item.name}</span>
-                    <span className="text-xs font-bold text-gray-800 dark:text-white ml-auto">{item.value}</span>
-                  </div>
-                ))}
+              <p className="text-xs text-gray-400 dark:text-slate-500 -mt-3 mb-4">{statusTotal.toLocaleString()} clients across {statusRanked.length} status{statusRanked.length !== 1 ? 'es' : ''}</p>
+              <div className="space-y-3">
+                {statusBreakdown.map((item) => {
+                  const pct = statusTotal > 0 ? Math.round((item.value / statusTotal) * 100) : 0;
+                  return (
+                    <div key={item.name} title={item.title}>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.dotColor }} />
+                          <span className="text-xs font-medium text-gray-700 dark:text-slate-300 truncate">{item.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums">{pct}%</span>
+                          <span className="text-xs font-bold text-gray-900 dark:text-white tabular-nums w-7 text-right">{item.value}</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-white/[0.06] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-violet-500 transition-all duration-500"
+                          style={{ width: `${statusMax > 0 ? Math.max((item.value / statusMax) * 100, 3) : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}

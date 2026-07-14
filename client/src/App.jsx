@@ -31,6 +31,13 @@ function SuperAdminRoute({ children }) {
   return isSuperAdmin ? children : <Navigate to="/clients" replace />;
 }
 
+function AdminRoute({ children }) {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.roles?.includes('ROLE_SUPER_ADMIN');
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN');
+  return (isSuperAdmin || isAdmin) ? children : <Navigate to="/clients" replace />;
+}
+
 export default function App() {
   const { user } = useAuth();
 
@@ -56,7 +63,7 @@ export default function App() {
         <Route path="payments" element={<Payments />} />
         <Route path="conversations" element={<FollowUps />} />
         <Route path="history" element={<History />} />
-        <Route path="documents" element={<DocumentGenerator />} />
+        <Route path="documents" element={<AdminRoute><DocumentGenerator /></AdminRoute>} />
         <Route path="activity-logs" element={<SuperAdminRoute><ActivityLogs /></SuperAdminRoute>} />
         <Route path="admin" element={<SuperAdminRoute><AdminPage /></SuperAdminRoute>} />
       </Route>

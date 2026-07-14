@@ -36,11 +36,23 @@ async function renderPdfBuffer(docDefinition) {
   return doc.getBuffer();
 }
 
-// Always reads fresh from the DB (no caching) so a logo change is reflected on the very next generation.
-async function getLogoDataUri() {
+// Always reads fresh from the DB (no caching) so a logo/settings change is reflected
+// on the very next render. Returns { logoDataUri, orgName, orgWebsite, contactAddress,
+// contactEmail, contactWhatsapp } — text fields are author-time defaults; a saved
+// document's own field values (if present) should win over these.
+async function getCompanySettings() {
   const settings = await CompanySettings.findOne();
-  if (!settings || !settings.logo || !settings.logo.data) return null;
-  return `data:${settings.logo.contentType};base64,${settings.logo.data.toString('base64')}`;
+  const logoDataUri = settings?.logo?.data
+    ? `data:${settings.logo.contentType};base64,${settings.logo.data.toString('base64')}`
+    : null;
+  return {
+    logoDataUri,
+    orgName: settings?.orgName || '',
+    orgWebsite: settings?.orgWebsite || '',
+    contactAddress: settings?.contactAddress || '',
+    contactEmail: settings?.contactEmail || '',
+    contactWhatsapp: settings?.contactWhatsapp || '',
+  };
 }
 
 function highlightRun(text, extra = {}) {
@@ -79,7 +91,7 @@ function logoHeaderRow(logoDataUri) {
 
 module.exports = {
   renderPdfBuffer,
-  getLogoDataUri,
+  getCompanySettings,
   highlightRun,
   linkRun,
   formatLongDate,
